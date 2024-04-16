@@ -1,9 +1,11 @@
 import re
+from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse
 
-def scraper(url, resp):
+def scraper(url: str, resp: Response) -> list:
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -16,6 +18,7 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     return list()
+
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
