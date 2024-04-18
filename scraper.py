@@ -1,6 +1,8 @@
 import re
+import shelve
 from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup
 
 def scraper(url: str, resp: Response) -> list:
     links = extract_next_links(url, resp)
@@ -8,6 +10,18 @@ def scraper(url: str, resp: Response) -> list:
 
 
 def extract_next_links(url, resp):
+    '''
+    HOW TO APPROACH THIS FUNCTION:
+
+    1. Make an HTTP GET request to the target webpage to get the HTML content.
+    2. Create a Beautiful Soup object from the HTML content.
+    3. Use the object to find all `<a>` elements.
+    4. For each `<a>` element, extract the URL found in the `href` attribute.
+    5. Resolve any relative URLs to absolute URLs.
+    6. Optionally, filter out any URLs that are not of interest or are disallowed.
+    7. Choose the next URL to visit from the remaining list of URLs.
+
+    '''
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -17,6 +31,19 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
+    
+    if resp.status == 200:
+        print("ACCESSING VALID URL")
+        soup = BeautifulSoup(resp.raw_response.content, "html.parser")
+        # print(soup) # prints HTML after being scraped
+
+        for link in soup.find_all('a', href=True):
+            print(link['href']) # prints the links
+            # TODO: turn all relative paths to absolute paths
+            # TODO: check the robots.txt file first before entering the site
+            # TODO: remove all fragments from the url
+
     return list()
 
 
