@@ -4,6 +4,21 @@ from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 
+
+def checkPath(url: str) -> bool:
+    '''
+    Checks the provided url and determines whether it is a relative path or absolute path.
+    '''
+    return True if re.search("(?:[a-z]+:)?//", url) else False
+
+
+def convertRelativeToAbosolute(url: str) -> str:
+    '''
+    Converts a relative path to an absolute path so that we can crawl it
+    '''
+    pass
+
+
 def scraper(url: str, resp: Response) -> list:
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
@@ -32,19 +47,28 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
-    
+    list_of_urls = []
+
     if resp.status == 200:
         print("ACCESSING VALID URL")
         soup = BeautifulSoup(resp.raw_response.content, "html.parser")
         # print(soup) # prints HTML after being scraped
 
         for link in soup.find_all('a', href=True):
-            print(link['href']) # prints the links
+            possible_link = link['href']
+            actual_link = ''
+            if not checkPath(possible_link):
+                # if the path is not a valid absolute path then we manipulate it so that it becomes one
+                pass
+            actual_link = possible_link
+            list_of_urls.append(actual_link)
+
+            # print(resp.url, '\n', link['href'], '\n', checkPath(link['href'])) # prints the links
             # TODO: turn all relative paths to absolute paths
             # TODO: check the robots.txt file first before entering the site
             # TODO: remove all fragments from the url
 
-    return list()
+    return list_of_urls
 
 
 def is_valid(url):
