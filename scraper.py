@@ -1,9 +1,16 @@
 import re
 import shelve
+import fnmatch
 from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
 import urllib.robotparser
+
+
+DOMAINS = ['*.ics.uci.edu/*', 
+          '*.cs.uci.edu/*', 
+          '*.informatics.uci.edu/*', 
+          '*.stat.uci.edu/*']
 
 
 def checkPath(url: str) -> bool:
@@ -35,7 +42,7 @@ def checkRobotsTxt(url: str) -> bool:
         return False
     
     
-def getRobotsUrl(url):
+def getRobotsUrl(url:str) -> str:
     '''
     Attemps to replace url path with "robots.txt"
     '''
@@ -46,6 +53,26 @@ def getRobotsUrl(url):
     except Exception as e:
         print("Can't complete robots.txt url replacement")
         return 
+    
+
+def isValidUrlToScrape(url: str) -> bool:
+    '''
+    Checks to see if the domains collected from the sites are within the sites specified by the project
+    '''
+    for pattern in DOMAINS:
+        if fnmatch.fnmatch(url, pattern):
+            return True
+    return False
+
+
+def removeFragment(url: str) -> str:
+    '''
+    Removes the fragment from a url
+    '''
+    parsed_url = urlparse(url)
+    # Remove fragment from the URL
+    clean_url = urlunparse(parsed_url._replace(fragment=''))
+    return clean_url
 
 
 def scraper(url: str, resp: Response) -> list:
@@ -81,40 +108,28 @@ def extract_next_links(url, resp):
 
     if resp.status == 200:
         print("ACCESSING VALID URL")
-        soup = BeautifulSoup(resp.raw_response.content, "html.parser")
-        # print(soup) # prints HTML after being scraped
+        parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
         # check if robots.txt file says it's okay to crawl
         if not checkRobotsTxt(resp.url):
             print("This URL cannot be crawled due to robots.txt")
             return []
-        else:
-            #print("DEBUG: ROBOTS SUCCESS")
-            pass
 
-
-
-        for link in soup.find_all('a', href=True):
+        for link in parsed_html.find_all('a', href=True):
             possible_link = link['href']
             actual_link = ''
             if not checkPath(possible_link):
                 # if the path is not a valid absolute path then we manipulate it so that it becomes one
-                #print("DEBUG POSSIBLE LINK:", possible_link)
                 actual_link = convertRelativeToAbsolute(url, possible_link)
-                #print("DEBUG ACTUAL LINK:", actual_link)
             else:
                 actual_link = possible_link
-            list_of_urls.append(actual_link)
-            
 
-            # print(resp.url, '\n', link['href'], '\n', checkPath(link['href'])) # prints the links
-            # TODO: turn all relative paths to absolute paths
-            # TODO: check the robots.txt file first before entering the site
-            # TODO: remove all fragments from the url
+            actual_link = removeFragment(actual_link) #defragment the link
+            
+            if isValidUrlToScrape(actual_link):
+                list_of_urls.append(actual_link)
 
     return list_of_urls
-
-        
         
         
 def is_valid(url):
