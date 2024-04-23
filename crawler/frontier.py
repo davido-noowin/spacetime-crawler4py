@@ -29,7 +29,8 @@ class Frontier(object):
         self.save = shelve.open(self.config.save_file)
         if restart:
             for url in self.config.seed_urls:
-                self.add_url(url)
+                #Peter: seeds get bfs_depth 0
+                self.add_url(url, 0)
         else:
             # Set the frontier state with contents of save file.
             self._parse_save_file()
