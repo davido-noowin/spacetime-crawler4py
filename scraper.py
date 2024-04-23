@@ -146,8 +146,10 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1|ppsx|pps"
+            + r"|epub|dll|cnf|tgz|sha1|ppsx|pps|mat"
             + r"|thmx|mso|arff|rtf|jar|csv"
+            + r"|py|sql|c|cpp|out|test|mod|tag|info|Z|lisp|cc"
+            + r"|col"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
