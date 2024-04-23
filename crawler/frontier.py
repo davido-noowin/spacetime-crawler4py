@@ -2,6 +2,7 @@ import os
 import shelve
 
 from threading import Thread, RLock
+#Peter: using Queue
 from queue import Queue, Empty
 
 from utils import get_logger, get_urlhash, normalize
@@ -13,7 +14,7 @@ class Frontier(object):
     def __init__(self, config, restart):
         self.logger = get_logger("FRONTIER")
         self.config = config
-        self.to_be_downloaded = list()
+        self.to_be_downloaded = Queue()
         
         if not os.path.exists(self.config.save_file) and not restart:
             # Save file does not exist, but request to load save.
@@ -47,18 +48,18 @@ class Frontier(object):
         for url, completed, bfs_depth in self.save.values():
             if not completed and is_valid(url):
                 #Peter: appending pair (url, bfs_depth)
-                self.to_be_downloaded.append((url, bfs_depth))
+                self.to_be_downloaded.put((url, bfs_depth))
                 tbd_count += 1
         self.logger.info(
             f"Found {tbd_count} urls to be downloaded from {total_count} "
             f"total urls discovered.")
 
-    #Peter: no code changed in this function, but now returns pair (url, bfs_depth)
+    #Peter: returns pair (url, bfs_depth)
+    #  the skeleton function also returned None upon IndexError (when no more to pop)
     def get_tbd_url(self):
-        try:
-            return self.to_be_downloaded.pop()
-        except IndexError:
+        if self.to_be_downloaded.empty():
             return None
+        return self.to_be_downloaded.get()
 
     #Peter: now takes url, bfs_depth instead of url
     def add_url(self, url, bfs_depth):
@@ -69,7 +70,7 @@ class Frontier(object):
             self.save[urlhash] = (url, False, bfs_depth)
             self.save.sync()
             #Peter: appends pair(url, bfs_depth)
-            self.to_be_downloaded.append((url, bfs_depth))
+            self.to_be_downloaded.put((url, bfs_depth))
     
     #Peter: now takes url, bfs_depth instead of url
     def mark_url_complete(self, url, bfs_depth):
