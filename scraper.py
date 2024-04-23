@@ -41,6 +41,10 @@ def checkRobotsTxt(url: str) -> bool:
         print("Can't find robots.txt")
         return False
     
+
+def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
+    pass
+    
     
 def getRobotsUrl(url:str) -> str:
     '''
@@ -110,9 +114,16 @@ def extract_next_links(url, resp):
         print("ACCESSING VALID URL")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
+        #TODO should this happen after the BeautifulSoup?
         # check if robots.txt file says it's okay to crawl
         if not checkRobotsTxt(resp.url):
             print("This URL cannot be crawled due to robots.txt")
+            return []
+        
+        #TODO PETER if no significant content, return []
+        #  TODO check with group
+        if lowInformationValue(parsed_html):
+            print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
 
         for link in parsed_html.find_all('a', href=True):
