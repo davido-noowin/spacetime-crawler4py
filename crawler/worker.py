@@ -17,6 +17,10 @@ class Worker(Thread):
         assert {getsource(scraper).find(req) for req in {"from urllib.request import", "import urllib.request"}} == {-1}, "Do not use urllib.request in scraper.py"
         super().__init__(daemon=True)
         
+
+    # 6. detect and avoid urls that return 200 but have no data
+    # (pages that return a 200 code, but can't open)
+    # fix in the download area
     def run(self):
         while True:
             tbd_url = self.frontier.get_tbd_url()
