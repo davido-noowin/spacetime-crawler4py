@@ -13,7 +13,7 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.stat.uci.edu/*']
 
 
-MAX_BFS_DEPTH = 50
+MAX_BFS_DEPTH = 5000
 
 
 def checkPath(url: str) -> bool:
