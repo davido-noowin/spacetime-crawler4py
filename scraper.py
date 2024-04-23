@@ -38,8 +38,8 @@ def checkRobotsTxt(url: str) -> bool:
         rp.read()
         return rp.can_fetch("*", url)
     except Exception as e:
-        print("Can't find robots.txt")
-        return False
+        print("Can't find robots.txt, proceed to crawl")
+        return True
     
 
 def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
