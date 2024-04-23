@@ -2,6 +2,9 @@ from utils import get_logger
 from crawler.frontier import Frontier
 from crawler.worker import Worker
 
+#Peter: crash recovery
+from time import sleep
+
 class Crawler(object):
     def __init__(self, config, restart, frontier_factory=Frontier, worker_factory=Worker):
         self.config = config
@@ -18,8 +21,20 @@ class Crawler(object):
             worker.start()
 
     def start(self):
-        self.start_async()
-        self.join()
+        #Peter: crash recovery
+        #  arbitrary 1000 tries, each after sleeping for 30 sec
+        #  TODO verify with group
+        retries_left = 1000
+        while (retries_left > 0):
+            try:
+                self.start_async()
+                self.join()
+            except Exception as e:
+                retries_left -= 1
+                print("Uncaught error occurred:")
+                print(e)
+                print(f"Retrying in one minute. After this, {retries_left} retries remaining.")
+                sleep(30)
 
     def join(self):
         for worker in self.workers:
