@@ -43,7 +43,7 @@ def checkRobotsTxt(url: str) -> bool:
     
 
 def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
-    pass
+    return False #TODO
     
     
 def getRobotsUrl(url:str) -> str:
