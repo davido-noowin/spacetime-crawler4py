@@ -19,7 +19,8 @@ class Worker(Thread):
         
     def run(self):
         while True:
-            tbd_url = self.frontier.get_tbd_url()
+            #Peter: gets pair(url, bfs_depth)
+            tbd_url, bfs_depth = self.frontier.get_tbd_url()
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break
@@ -27,8 +28,10 @@ class Worker(Thread):
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
-            scraped_urls = scraper.scraper(tbd_url, resp)
+            #Peter: takes url, resp, bfs_depth
+            scraped_urls = scraper.scraper(tbd_url, resp, bfs_depth)
             for scraped_url in scraped_urls:
-                self.frontier.add_url(scraped_url)
-            self.frontier.mark_url_complete(tbd_url)
+                #Peter: appends pair (url, bfs_depth + 1)
+                self.frontier.add_url(scraped_url, bfs_depth + 1)
+            self.frontier.mark_url_complete(tbd_url, bfs_depth)
             time.sleep(self.config.time_delay)

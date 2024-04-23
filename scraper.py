@@ -13,6 +13,9 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.stat.uci.edu/*']
 
 
+MAX_BFS_DEPTH = 50
+
+
 def checkPath(url: str) -> bool:
     '''
     Checks the provided url and determines whether it is a relative path or absolute path.
@@ -78,13 +81,15 @@ def removeFragment(url: str) -> str:
     clean_url = urlunparse(parsed_url._replace(fragment=''))
     return clean_url
 
+#Peter: takes url, resp, bfs_depth
+def scraper(url: str, resp: Response, bfs_depth: int) -> list:
+    #Peter: takes url, resp, bfs_depth
+    links = extract_next_links(url, resp, bfs_depth)
+    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
+    return [link for link in  links if is_valid(link)]
 
-def scraper(url: str, resp: Response) -> list:
-    links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
-
-
-def extract_next_links(url, resp):
+#Peter: takes url, resp, bfs_depth
+def extract_next_links(url, resp, bfs_depth):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -107,8 +112,12 @@ def extract_next_links(url, resp):
     7. Choose the next URL to visit from the remaining list of URLs.
 
     '''
-    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
+    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n bfs_depth - {bfs_depth}\n ')
     list_of_urls = []
+
+    #Peter: bfs pruning happens here
+    if bfs_depth >= MAX_BFS_DEPTH:
+        return []
 
     if resp.status == 200:
         print("ACCESSING VALID URL")
@@ -140,6 +149,7 @@ def extract_next_links(url, resp):
             if isValidDomain(actual_link):
                 list_of_urls.append(actual_link)
 
+    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
         
         
