@@ -14,6 +14,10 @@ def download(url, config, logger=None):
         s = requests.Session()
         s.max_redirects = MAX_REDIRECT     # sets the max number of redirects that a link can have to 10
 
+        # if content is too large and exceeds a max size of 2MB, raise error
+        if not checkLinkSize(url, host, port, config):
+            raise Exception('File is too big')
+
         resp = requests.get(
             f"http://{host}:{port}/",
             params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
@@ -28,8 +32,9 @@ def download(url, config, logger=None):
         print("TIMEOUT ERROR: page timed out")
         return False
     
-    except Exception as e:
+    except Exception as e:      # if there are other exceptions, return false to worker.py
         print(e)
+        return False
 
     try:
         if resp and resp.content:
@@ -43,15 +48,19 @@ def download(url, config, logger=None):
         "url": url})
 
 
-# determines whether or not to download a link based on its size
-def checkLinkSize(url: str) -> bool:
+# determines whether or not to open a link based on its size
+def checkLinkSize(url: str, host, port, config) -> bool:
     '''
     Preliminary check to see if the url is too large.
-    Files that do not have a Content-Length header section will still try to be downloaded,
-    but if it takes too long then download will stop elsewhere.
+    Files that do not have a Content-Length header section will still try to be opened,
+    but if it takes too long then open will stop elsewhere.
     Returns False if file is too large, otherwise True.
     '''
-    response = requests.head(url)
+    response = requests.head(f"http://{host}:{port}/",
+            params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
+            allow_redirects=True,          # allows for redirects
+            timeout=MAX_TIMEOUT_SECONDS)                 # caps each download at a 20 second timeout
+    
     size = response.headers.get('Content-Length')   # gets content length information from the header
 
     try:

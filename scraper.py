@@ -133,11 +133,6 @@ def extract_next_links(url, resp):
             print("This URL cannot be crawled due to robots.txt")
             return []
         
-        # if content is too large and exceeds a max size of 2MB, return []
-        if not checkLinkSize(resp.url):
-            print("THIS URL WILL NOT BE CRAWLED DUE TO ITS SIZE.")
-            return []
-        
         #TODO PETER if no significant content, return []
         #  TODO check with group
         if lowInformationValue(parsed_html):
