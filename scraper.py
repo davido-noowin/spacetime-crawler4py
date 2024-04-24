@@ -118,7 +118,7 @@ def extract_next_links(url, resp):
         url.startswith("https://wiki.ics.uci.edu/doku.php") or \
         url.startswith("http://archive.ics.uci.edu/ml/datasets.php") or \
         url.startswith("https://tippersweb.ics.uci.edu") or \
-        url.startswith("https://ics.uci.edu/honors/computing/computing/computing") or \
+        "computing/computing/computing" in url or \
         url.startswith("https://swiki.ics.uci.edu/doku.php"):
         return []
 
