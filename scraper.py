@@ -42,10 +42,6 @@ def checkRobotsTxt(url: str) -> bool:
         print("Can't find robots.txt, proceed to crawl")
         return True
     
-
-def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
-    return False #TODO
-    
     
 def getRobotsUrl(url:str) -> str:
     '''
@@ -58,6 +54,10 @@ def getRobotsUrl(url:str) -> str:
     except Exception as e:
         print("Can't complete robots.txt url replacement")
         return 
+    
+    
+def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
+    return False #TODO
     
 
 def isValidDomain(url: str) -> bool:
@@ -112,8 +112,15 @@ def extract_next_links(url, resp):
     list_of_urls = []
 
     #Peter: hardcoding against some traps for now to see how many there are
+    #  not good, but i am just trying to find patterns
     if url.endswith("stayconnected/stayconnected/stayconnected/index.php") or \
-        url.beginswith("https://wiki.ics.uci.edu/doku.php/projects:maint-spring-2021"):
+        url.startswith("https://wiki.ics.uci.edu/doku.php/projects:maint-spring-2021") or \
+        url.startswith("https://wiki.ics.uci.edu/doku.php/virtual_environments:jupyterhub") or \
+        url.startswith("https://wiki.ics.uci.edu/doku.php") or \
+        url.startswith("http://archive.ics.uci.edu/ml/datasets.php") or \
+        url.startswith("https://tippersweb.ics.uci.edu") or \
+        url.startswith("https://ics.uci.edu/honors/computing/computing/computing") or \
+        url.startswith("https://swiki.ics.uci.edu/doku.php"):
         return []
 
     if resp.status == 200:
