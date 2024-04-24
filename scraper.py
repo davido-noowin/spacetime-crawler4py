@@ -5,6 +5,7 @@ from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
 import urllib.robotparser
+from utils.download import checkLinkSize    # function to check download size is located in download.py
 
 
 DOMAINS = ['*.ics.uci.edu/*', 
@@ -123,6 +124,11 @@ def extract_next_links(url, resp):
         # check if robots.txt file says it's okay to crawl
         if not checkRobotsTxt(resp.url):
             print("This URL cannot be crawled due to robots.txt")
+            return []
+        
+        # if content is too large and exceeds a max size of 2MB, return []
+        if checkLinkSize(resp.url):
+            print("THIS URL WILL NOT BE CRAWLED DUE TO ITS SIZE.")
             return []
         
         #TODO PETER if no significant content, return []

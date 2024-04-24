@@ -6,6 +6,7 @@ from utils.response import Response
 
 MAX_REDIRECT = 10
 MAX_TIMEOUT_SECONDS = 20
+MAX_BYTE_SIZE = 2000000
 
 def download(url, config, logger=None):
     host, port = config.cache_server
@@ -40,3 +41,17 @@ def download(url, config, logger=None):
         "error": f"Spacetime Response error {resp} with url {url}.",
         "status": resp.status_code,
         "url": url})
+
+
+# determines whether or not to download a link based on its size
+def checkLinkSize(url: str) -> bool:
+    '''
+    Preliminary check to see if the url is too large.
+    Files that do not have a Content-Length header section will still try to be downloaded,
+    but if it takes too long then download will stop elsewhere.
+    Returns False if file is too large, otherwise True.
+    '''
+    response = requests.head(url)
+    size = response.headers.get('Content-Length')   # gets content length information from the header
+
+    return False if size > MAX_BYTE_SIZE else True    # sets the threshold for the maximum size of a url to be 2MB
