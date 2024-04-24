@@ -45,6 +45,7 @@ class Worker(Thread):
                 self.logger.info(
                     f"Failed to download {tbd_url}, status <{resp.status}>, "
                     f"using cache {self.config.cache_server}.")
+                self.frontier.mark_url_complete(tbd_url)    # mark complete, so we don't visit it again
                 continue    # failed downloads (due to timeout error, too many redirects, other exceptions) do not get scraped
 
             self.logger.info(
