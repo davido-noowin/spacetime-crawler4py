@@ -54,4 +54,9 @@ def checkLinkSize(url: str) -> bool:
     response = requests.head(url)
     size = response.headers.get('Content-Length')   # gets content length information from the header
 
-    return False if size > MAX_BYTE_SIZE else True    # sets the threshold for the maximum size of a url to be 2MB
+    try:
+        size = int(size)
+    except:
+        return True     # if there is no Content-Length portion in the header, then we still crawl that link
+    else:
+        return False if size > MAX_BYTE_SIZE else True    # sets the threshold for the maximum size of a url to be 2MB
