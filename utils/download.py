@@ -7,6 +7,9 @@ from utils.response import Response
 def download(url, config, logger=None):
     host, port = config.cache_server
     try:
+        s = requests.Session()
+        s.max_redirects = 3     # sets the max number of redirects that a link can have to 3
+
         resp = requests.get(
             f"http://{host}:{port}/",
             params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
