@@ -4,23 +4,26 @@ import time
 
 from utils.response import Response
 
+MAX_REDIRECT = 10
+MAX_TIMEOUT_SECONDS = 20
+
 def download(url, config, logger=None):
     host, port = config.cache_server
     try:
         s = requests.Session()
-        s.max_redirects = 3     # sets the max number of redirects that a link can have to 3
+        s.max_redirects = MAX_REDIRECT     # sets the max number of redirects that a link can have to 10
 
         resp = requests.get(
             f"http://{host}:{port}/",
             params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
             allow_redirects=True,          # allows for redirects
-            timeout=0.001)                 # caps each download at a 0.001 second timeout
+            timeout=MAX_TIMEOUT_SECONDS)                 # caps each download at a 20 second timeout
         
     except requests.TooManyRedirects:   # if a link exceeds the maximum number of redirects
         print("REDIRECT ERROR: Too Many Redirects")
         return False
 
-    except requests.Timeout:    # if more than 0.001 seconds passes without receiving a byte, we raise a timeout error
+    except requests.Timeout:    # if more than 20 seconds passes without receiving a response, we raise a timeout error
         print("TIMEOUT ERROR: page timed out")
         return False
     
