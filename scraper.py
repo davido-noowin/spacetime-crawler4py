@@ -134,7 +134,7 @@ def extract_next_links(url, resp):
             return []
         
         # if content is too large and exceeds a max size of 2MB, return []
-        if checkLinkSize(resp.url):
+        if not checkLinkSize(resp.url):
             print("THIS URL WILL NOT BE CRAWLED DUE TO ITS SIZE.")
             return []
         
