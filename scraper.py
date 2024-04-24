@@ -114,8 +114,9 @@ def extract_next_links(url, resp):
     if url.endswith("stayconnected/stayconnected/stayconnected/index.php") or \
         url.startswith("https://wiki.ics.uci.edu/doku.php/projects:maint-spring-2021") or \
         url.startswith("https://wiki.ics.uci.edu/doku.php/virtual_environments:jupyterhub") or \
+        url.startswith("https://wiki.ics.uci.edu/doku.php") or \
         url.startswith("http://archive.ics.uci.edu/ml/datasets.php") or \
-        url.startswith("https://tippersweb.ics.uci.edu/covid19/d/jb22mkvMk/cs-dashboard?refresh=30s&orgId=1"):
+        url.startswith("https://tippersweb.ics.uci.edu"):
         return []
 
     if resp.status == 200:
