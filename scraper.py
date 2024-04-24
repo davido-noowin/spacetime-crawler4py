@@ -41,10 +41,6 @@ def checkRobotsTxt(url: str) -> bool:
         print("Can't find robots.txt, proceed to crawl")
         return True
     
-
-def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
-    return False #TODO
-    
     
 def getRobotsUrl(url:str) -> str:
     '''
@@ -57,6 +53,10 @@ def getRobotsUrl(url:str) -> str:
     except Exception as e:
         print("Can't complete robots.txt url replacement")
         return 
+    
+    
+def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
+    return False #TODO
     
 
 def isValidDomain(url: str) -> bool:
@@ -113,7 +113,9 @@ def extract_next_links(url, resp):
     #Peter: hardcoding against some traps for now to see how many there are
     if url.endswith("stayconnected/stayconnected/stayconnected/index.php") or \
         url.startswith("https://wiki.ics.uci.edu/doku.php/projects:maint-spring-2021") or \
-        url.startswith("http://archive.ics.uci.edu/ml/datasets.php"):
+        url.startswith("https://wiki.ics.uci.edu/doku.php/virtual_environments:jupyterhub") or \
+        url.startswith("http://archive.ics.uci.edu/ml/datasets.php") or \
+        url.startswith("https://tippersweb.ics.uci.edu/covid19/d/jb22mkvMk/cs-dashboard?refresh=30s&orgId=1"):
         return []
 
     if resp.status == 200:
