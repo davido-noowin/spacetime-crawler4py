@@ -5,7 +5,7 @@ from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
 import urllib.robotparser
-from utils.download import checkLinkSize    # function to check download size is located in download.py
+
 
 
 DOMAINS = ['*.ics.uci.edu/*', 
