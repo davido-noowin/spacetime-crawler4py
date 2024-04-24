@@ -75,26 +75,6 @@ def removeFragment(url: str) -> str:
     return clean_url
 
 
-def redirectUrl(url: str, resp: Response, depth: int) -> list[str]:
-    '''
-    Handles all redirects to get the actual root URL.
-    We decided that if there are more than 200 redirects, this is a trap.
-    '''
-    if depth > 200: # if there are more than 200 redirects, we decide that this is a trap
-        return []
-    
-    if resp.status == 200: # returns the valid url
-        return extract_next_links(url, resp)
-    
-    if resp.status == 302: # if there is another redirect, we visit the redirected page
-        redirectUrl(url, resp, depth+1) # increment the recursive depth
-    
-    else: # other status codes? help
-        print(resp.status)
-        return extract_next_links(url, resp)
-
-
-
 def scraper(url: str, resp: Response) -> list:
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
@@ -148,14 +128,6 @@ def extract_next_links(url, resp):
             
             if isValidDomain(actual_link):
                 list_of_urls.append(actual_link)
-
-    # if we detect a redirect then we visit the redirected page instead
-    if resp.status == 302: # infinite redirect trap?
-        list_of_urls.extend(redirectUrl(resp.url, resp, 1))
-
-    # what if there are other status codes? what to do
-
-
 
     return list_of_urls
         
