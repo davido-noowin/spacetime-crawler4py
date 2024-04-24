@@ -6,10 +6,20 @@ from utils.response import Response
 
 def download(url, config, logger=None):
     host, port = config.cache_server
-    resp = requests.get(
-        f"http://{host}:{port}/",
-        params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
-        allow_redirects=True)   # allows for redirects so that we can perform location redirection
+    try:
+        resp = requests.get(
+            f"http://{host}:{port}/",
+            params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
+            allow_redirects=True,          # allows for redirects
+            timeout=30)                    # caps each download at a 30 second timeout, so if more than 30 seconds passes without receiving bytes, then we stop
+    except requests.TooManyRedirects:
+        pass
+        print("REDIRECT ERROR: Too Many Redirects")
+
+    except requests.Timeout:
+        pass
+        print("TIMEOUT ERROR: page timed out")
+
     try:
         if resp and resp.content:
             return Response(cbor.loads(resp.content))
