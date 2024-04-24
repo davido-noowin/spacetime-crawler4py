@@ -155,14 +155,14 @@ def extract_next_links(url, resp):
 
     return list_of_urls
         
-        
+#Peter: call this worker.run()
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     try:
         parsed = urlparse(url)
-        if parsed.scheme not in set(["http", "https"]):
+        if parsed.scheme not in {"http", "https"}:
             return False
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -173,9 +173,9 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1|ppsx|pps|mat"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|py|sql|c|cpp|out|test|mod|tag|info|Z|lisp|cc"
-            + r"|col|r"
+            + r"|col|r|apk|img|war|java"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
-        raise
+        return False

@@ -33,6 +33,12 @@ class Worker(Thread):
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break
 
+            print(f"worker.run(): considering {tbd_url}")
+            if not scraper.is_valid(tbd_url):
+                print("worker.run(): Filtered by is_valid()")
+                self.frontier.mark_url_complete(tbd_url)
+                break
+
             #Peter: map domain to time last accessed for hopefully faster crawling
             domain = urlparse(tbd_url).netloc
             if (wait_time := self.config.time_delay - (time.time() - DOMAIN_LAST_ACCESSED[domain])) >= 0.0:
