@@ -40,6 +40,13 @@ class Worker(Thread):
             resp = download(tbd_url, self.config, self.logger)
             DOMAIN_LAST_ACCESSED[domain] = time.time()
 
+            # if we encounter some error during the download, we skip this iteration
+            if resp is False:
+                self.logger.info(
+                    f"Failed to download {tbd_url}, status <{resp.status}>, "
+                    f"using cache {self.config.cache_server}.")
+                continue    # failed downloads (due to timeout error, too many redirects, other exceptions) do not get scraped
+
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")

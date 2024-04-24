@@ -11,14 +11,18 @@ def download(url, config, logger=None):
             f"http://{host}:{port}/",
             params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
             allow_redirects=True,          # allows for redirects
-            timeout=30)                    # caps each download at a 30 second timeout, so if more than 30 seconds passes without receiving bytes, then we stop
-    except requests.TooManyRedirects:
-        pass
+            timeout=0.001)                 # caps each download at a 0.001 second timeout
+        
+    except requests.TooManyRedirects:   # if a link exceeds the maximum number of redirects
         print("REDIRECT ERROR: Too Many Redirects")
+        return False
 
-    except requests.Timeout:
-        pass
+    except requests.Timeout:    # if more than 0.001 seconds passes without receiving a byte, we raise a timeout error
         print("TIMEOUT ERROR: page timed out")
+        return False
+    
+    except Exception as e:
+        print(e)
 
     try:
         if resp and resp.content:
