@@ -121,7 +121,7 @@ def extract_next_links(url, resp):
         url.startswith("https://tippersweb.ics.uci.edu") or \
         "ics.uci.edu/ugrad/honors/index.php" in url or \
         url.startswith("https://swiki.ics.uci.edu/doku.php"):
-        return [] https://www.ics.uci.edu/ugrad/honors
+        return []
 
     if resp.status == 200:
         print("ACCESSING VALID URL")
