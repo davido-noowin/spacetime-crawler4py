@@ -110,6 +110,10 @@ def extract_next_links(url, resp):
     print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
     list_of_urls = []
 
+    #Peter: hardcoding against some traps for now to see how many there are
+    if "stayconnected/stayconnected/stayconnected" in url:
+        return []
+
     if resp.status == 200:
         print("ACCESSING VALID URL")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
