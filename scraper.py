@@ -244,21 +244,17 @@ def extract_next_links(url, resp, bfs_depth):
     if bfs_depth >= MAX_BFS_DEPTH:
         return []
 
+    before_urlsDifferentEnough = 0
     if resp.status == 200:
         print("ACCESSING VALID URL")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
-        
         #TODO PETER if no significant content, return []
         #  TODO check with group
         if lowInformationValue(parsed_html):
             print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
         
-         
-
-
-        before_urlsDifferentEnough = 0
         for link in parsed_html.find_all('a', href=True):
             possible_link = link['href']
             actual_link = ''
@@ -281,8 +277,6 @@ def extract_next_links(url, resp, bfs_depth):
                     subDomainCount(resp.url)
                     wordFreqCount(parsed_html)
                     list_of_urls.append(actual_link)
-
-
 
     print(f" Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
     #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
