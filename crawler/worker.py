@@ -57,7 +57,9 @@ class Worker(Thread):
                 #Peter: url, bfs_depth
                 self.frontier.mark_url_complete(tbd_url, bfs_depth)    # mark complete, so we don't visit it again
                 continue    # failed downloads (due to timeout error, too many redirects, other exceptions) do not get scraped
-
+            
+            #Peter: pretty print
+            print(f"{'DEBUG':=^100}")
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")

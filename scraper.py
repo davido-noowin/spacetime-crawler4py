@@ -235,7 +235,6 @@ def extract_next_links(url, resp, bfs_depth):
     7. Choose the next URL to visit from the remaining list of URLs.
 
     '''
-    print(f"{'DEBUG':=^100}")
     print(f'URL - {url} \nresponse URL - {resp.url} \nResponse Status - {resp.status} \nResponse Error - {resp.error}\nbfs_depth - {bfs_depth}')
     list_of_urls = []
 
