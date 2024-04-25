@@ -94,6 +94,7 @@ def isValidDomain(url: str) -> bool:
             return True
     return False
 
+#TODO print and see if filtered URLs are actually right, eg 4 filtered from https://www.ics.uci.edu/about
 #TODO also want text tag ratio and still a depth cap as a fallback
 def urlsDifferentEnough(parent, child):
     #if child and parent are identical up to the query, then no
@@ -234,7 +235,8 @@ def extract_next_links(url, resp, bfs_depth):
     7. Choose the next URL to visit from the remaining list of URLs.
 
     '''
-    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n bfs_depth - {bfs_depth}\n')
+    print(f"{'DEBUG':=^100}")
+    print(f'URL - {url} \nresponse URL - {resp.url} \nResponse Status - {resp.status} \nResponse Error - {resp.error}\nbfs_depth - {bfs_depth}')
     list_of_urls = []
 
     #Peter: used to hardcode against some traps for now to see how many there are
@@ -246,7 +248,7 @@ def extract_next_links(url, resp, bfs_depth):
 
     before_urlsDifferentEnough = 0
     if resp.status == 200:
-        print("ACCESSING VALID URL")
+        print("ACCESSING VALID URL STATUS 200")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
         #TODO PETER if no significant content, return []
@@ -278,7 +280,7 @@ def extract_next_links(url, resp, bfs_depth):
                     wordFreqCount(parsed_html)
                     list_of_urls.append(actual_link)
 
-    print(f" Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
+    print(f"Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
     #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
         
