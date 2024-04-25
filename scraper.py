@@ -168,7 +168,7 @@ def subDomainCount(url: str):
                #for key, value in db.items():
                    #print(f"DEBUG ENTIRE SHELF= {key}: {value}")
 
-def wordFreqCount(content):
+def wordFreqCount(parsed_html):
     '''
     Counts frequency of each word, stores in shelve
     shelve file needs to be retrieved and sorted after the program is done running to get the data.
@@ -176,19 +176,17 @@ def wordFreqCount(content):
     '''
     # Initialize a counter to store word frequencies
     word_counter = Counter()
-    soup = BeautifulSoup(content, 'html.parser')
     
-    paragraphs = soup.find_all('p')
+    paragraphs = parsed_html.find_all('p')
     text = ' '.join([p.get_text() for p in paragraphs])
     words = nltk.word_tokenize(text)
-    words = [word.lower() for word in words if word.isalpha()]
-    
     stop_words = set(stopwords.words('english'))
-    words = [word for word in words if word not in stop_words]
+    words = [word.lower() for word in words if (word.isalpha() and word not in stop_words)]
     word_counter.update(words)
     
-    # Update the word frequencies in the Shelve database
+    #Update the word frequencies in the Shelve database
     with shelve.open('word_frequencies.db') as wordFreq:
+    
         for word, count in word_counter.items():
             wordFreq[word] = wordFreq.get(word, 0) + count
             #Need to sort from largest freq to smallest, but we
@@ -281,7 +279,7 @@ def extract_next_links(url, resp, bfs_depth):
                     updateUniqueUrl(actual_link) # adding to the counting set
                     updateWordCount(parsed_html, actual_link)
                     subDomainCount(resp.url)
-                    wordFreqCount(resp.raw_response.content)
+                    wordFreqCount(parsed_html)
                     list_of_urls.append(actual_link)
 
 
