@@ -29,7 +29,7 @@ URL_DISSIMILARITY_MINIMUM = 0.8
 
 
 unique_urls = set()
-max_num_words = 0
+num_words = 0
 longest_url = ""
 
 try:
@@ -141,9 +141,11 @@ def updateWordCount(parsed_html: BeautifulSoup, url:str) -> None:
     text = parsed_html.get_text(strip=True)
     tokenized_words = word_tokenize(text)
     word_count = len(tokenized_words)
+    global num_words
+    global longest_url
 
-    if word_count > max_num_words:
-        max_num_words = word_count
+    if word_count > num_words:
+        num_words = word_count
         longest_url = url
         
 def subDomainCount(url: str):
