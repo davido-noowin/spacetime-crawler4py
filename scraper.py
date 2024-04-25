@@ -13,6 +13,9 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.informatics.uci.edu/*', 
           '*.stat.uci.edu/*']
 
+
+MAX_BFS_DEPTH = 5000
+
 #Peter: might have to tune. the closer to 1, the more stringent
 URL_DISSIMILARITY_MINIMUM = 0.8
 
@@ -93,15 +96,18 @@ def removeFragment(url: str) -> str:
     clean_url = urlunparse(parsed_url._replace(fragment=''))
     return clean_url
 
-
-def scraper(url: str, resp: Response) -> list:
-    #Peter: putting is_valid() check in extract_next_links
-    return extract_next_links(url, resp)
+#Peter: takes url, resp, bfs_depth
+def scraper(url: str, resp: Response, bfs_depth: int) -> list:
+    #Peter: takes url, resp, bfs_depth
+    return extract_next_links(url, resp, bfs_depth)
     #links = extract_next_links(url, resp)
-    #return [link for link in links if is_valid(link)]
+    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
+    #return [link for link in  links if is_valid(link)]
 
 
-def extract_next_links(url, resp):
+
+#Peter: takes url, resp, bfs_depth
+def extract_next_links(url, resp, bfs_depth):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -124,11 +130,15 @@ def extract_next_links(url, resp):
     7. Choose the next URL to visit from the remaining list of URLs.
 
     '''
-    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
+    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n bfs_depth - {bfs_depth}\n ')
     list_of_urls = []
 
     #Peter: used to hardcode against some traps for now to see how many there are
     #  not good, but i am just trying to find patterns
+
+    #Peter: bfs pruning happens here
+    if bfs_depth >= MAX_BFS_DEPTH:
+        return []
 
     if resp.status == 200:
         print("ACCESSING VALID URL")
@@ -167,6 +177,7 @@ def extract_next_links(url, resp):
                     list_of_urls.append(actual_link)
 
     print(f" Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
+    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
         
 #Peter: call this worker.run()
