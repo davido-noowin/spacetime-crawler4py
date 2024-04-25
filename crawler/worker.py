@@ -5,6 +5,7 @@ from utils.download import download
 from utils import get_logger
 import scraper
 import time
+import urllib.robotparser
 
 
 #Peter: map domain to time last accessed for hopefully faster crawling
@@ -39,6 +40,12 @@ class Worker(Thread):
             domain = urlparse(tbd_url).netloc
             if (wait_time := self.config.time_delay - (time.time() - DOMAIN_LAST_ACCESSED[domain])) >= 0.0:
                 time.sleep(wait_time)
+
+            #Michael: check if robots.txt file says it's okay to crawl before downloading
+            if not scraper.checkRobotsTxt(tbd_url):
+                print("This URL cannot be crawled due to robots.txt")
+                continue
+            
             resp = download(tbd_url, self.config, self.logger)
             DOMAIN_LAST_ACCESSED[domain] = time.time()
 
