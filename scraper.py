@@ -7,6 +7,12 @@ from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
 from nltk.tokenize import word_tokenize # pip install nltk
 import urllib.robotparser
+from collections import Counter
+import nltk
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+nltk.download('punkt')
+
 
 
 
@@ -139,6 +145,53 @@ def updateWordCount(parsed_html: BeautifulSoup, url:str) -> None:
     if word_count > max_num_words:
         max_num_words = word_count
         longest_url = url
+        
+def subDomainCount(url: str):
+    '''
+    Counts number of unique "ics.uci.edu" subdomains, stores in 
+    shelve and needs to be retrieved after the program is done running to get the data.
+    Restarting the crawler with --restart will also reset this shelve
+    '''
+    with shelve.open('subdomain_counts.db', writeback=True) as db:
+            if 'subdomain_counts' not in db:
+                db['subdomain_counts'] = {}
+
+            if ".ics.uci.edu" in url:
+                parsedUrl = urlparse(url)
+                # Reconstruct the URL without the path, then store in shelve + 1
+                subdomain_url = parsedUrl.scheme + "://" + parsedUrl.netloc
+                subdomain_counts = db['subdomain_counts']
+                subdomain_counts[subdomain_url] = subdomain_counts.get(subdomain_url, 0) + 1
+                db['subdomain_counts'] = subdomain_counts
+               #for key, value in db.items():
+                   #print(f"DEBUG ENTIRE SHELF= {key}: {value}")
+
+def wordFreqCount(content):
+    '''
+    Counts frequency of each word, stores in shelve
+    shelve file needs to be retrieved and sorted after the program is done running to get the data.
+    Restarting the crawler with --restart will also reset this shelve
+    '''
+    # Initialize a counter to store word frequencies
+    word_counter = Counter()
+    soup = BeautifulSoup(content, 'html.parser')
+    
+    paragraphs = soup.find_all('p')
+    text = ' '.join([p.get_text() for p in paragraphs])
+    words = nltk.word_tokenize(text)
+    words = [word.lower() for word in words if word.isalpha()]
+    
+    stop_words = set(stopwords.words('english'))
+    words = [word for word in words if word not in stop_words]
+    word_counter.update(words)
+    
+    # Update the word frequencies in the Shelve database
+    with shelve.open('word_frequencies.db') as wordFreq:
+        for word, count in word_counter.items():
+            wordFreq[word] = wordFreq.get(word, 0) + count
+            #Need to sort from largest freq to smallest, but we
+            #can do this after running the program for efficiency
+   
 
 
 #Peter: takes url, resp, bfs_depth
@@ -195,17 +248,15 @@ def extract_next_links(url, resp, bfs_depth):
         print("ACCESSING VALID URL")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
-        #TODO should this happen after the BeautifulSoup?
-        # check if robots.txt file says it's okay to crawl
-        if not checkRobotsTxt(resp.url):
-            print("This URL cannot be crawled due to robots.txt")
-            return []
         
         #TODO PETER if no significant content, return []
         #  TODO check with group
         if lowInformationValue(parsed_html):
             print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
+        
+         
+
 
         before_urlsDifferentEnough = 0
         for link in parsed_html.find_all('a', href=True):
@@ -227,6 +278,8 @@ def extract_next_links(url, resp, bfs_depth):
                 if urlsDifferentEnough(url, actual_link):
                     updateUniqueUrl(actual_link) # adding to the counting set
                     updateWordCount(parsed_html, actual_link)
+                    subDomainCount(resp.url)
+                    wordFreqCount(resp.raw_response.content)
                     list_of_urls.append(actual_link)
 
 
