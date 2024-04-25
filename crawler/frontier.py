@@ -26,6 +26,13 @@ class Frontier(object):
             self.logger.info(
                 f"Found save file {self.config.save_file}, deleting it.")
             os.remove(self.config.save_file)
+
+        # MICHAEL - ADDED to delete subdomain/wordfreq count from shelve on restart
+            if os.path.exists('subdomain_counts.db'):
+                 os.remove('subdomain_counts.db')
+            if os.path.exists('word_frequencies.db'):
+                 os.remove('word_frequencies.db')
+                
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
         if restart:
