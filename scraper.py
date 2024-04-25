@@ -13,6 +13,9 @@ from nltk.corpus import stopwords
 nltk.download('stopwords')
 nltk.download('punkt')
 
+#Peter: profiling
+import time
+
 
 
 
@@ -274,10 +277,21 @@ def extract_next_links(url, resp, bfs_depth):
                 #  putting this count here to print whether anything was filtered by urlsDifferentEnough
                 before_urlsDifferentEnough += 1
                 if urlsDifferentEnough(url, actual_link):
+                    time_0 = time.time()
                     updateUniqueUrl(actual_link) # adding to the counting set
+                    time_1 = time.time()
                     updateWordCount(parsed_html, actual_link)
+                    time_2 = time.time()
                     subDomainCount(resp.url)
+                    time_3 = time.time()
                     wordFreqCount(parsed_html)
+                    time_4 = time.time()
+
+                    print(f"updateUniqueUrl: {time_1 - time_0}")
+                    print(f"updateWordCount: {time_2 - time_1}")
+                    print(f"subDomainCount: {time_3 - time_2}")
+                    print(f"wordFreqCount: {time_4 - time_3}")
+
                     list_of_urls.append(actual_link)
 
     print(f"Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
