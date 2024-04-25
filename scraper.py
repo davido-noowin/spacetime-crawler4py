@@ -108,6 +108,11 @@ def removeFragment(url: str) -> str:
 
 
 def updateUniqueUrl(url: str) -> None:
+    '''
+    Appends the current URL to the unique url set. Periodically (50 urls) it will
+    write to the pickle file in case something goes wrong then we have some data that
+    we can still recover
+    '''
     unique_urls.add(url)
     if len(unique_urls) % 50 == 0:  # Or choose a different interval
         try:
