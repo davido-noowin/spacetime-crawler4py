@@ -23,6 +23,13 @@ URL_DISSIMILARITY_MINIMUM = 0.8
 
 unique_urls = set()
 
+try:
+    with open('unique_urls.pkl', 'rb') as file:
+        unique_urls = pickle.load(file)
+except (FileNotFoundError, EOFError):
+    unique_urls = set()
+
+
 def checkPath(url: str) -> bool:
     '''
     Checks the provided url and determines whether it is a relative path or absolute path.
@@ -99,11 +106,29 @@ def removeFragment(url: str) -> str:
     clean_url = urlunparse(parsed_url._replace(fragment=''))
     return clean_url
 
+
+def updateUniqueUrl(url: str) -> None:
+    unique_urls.add(url)
+    if len(unique_urls) % 50 == 0:  # Or choose a different interval
+        try:
+            with open('unique_urls.pkl', 'wb') as file:
+                pickle.dump(unique_urls, file)
+        except Exception as e:
+            print(f"Error saving unique_urls set: {e}")
+
+
 #Peter: takes url, resp, bfs_depth
 def scraper(url: str, resp: Response, bfs_depth: int) -> list:
     #Peter: takes url, resp, bfs_depth
     # correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
-    return extract_next_links(url, resp, bfs_depth)
+    extracted_links_to_scrape = extract_next_links(url, resp, bfs_depth)
+    if len(extracted_links_to_scrape) == 0: 
+        try:
+            with open('unique_urls.pkl', 'wb') as file:
+                pickle.dump(unique_urls, file)
+        except Exception as e:
+            print(f"Error saving unique_urls set on shutdown: {e}")
+    return extracted_links_to_scrape
     #links = extract_next_links(url, resp)
     #return [link for link in  links if is_valid(link)]
 
@@ -176,7 +201,10 @@ def extract_next_links(url, resp, bfs_depth):
                 #  putting this count here to print whether anything was filtered by urlsDifferentEnough
                 before_urlsDifferentEnough += 1
                 if urlsDifferentEnough(url, actual_link):
+                    updateUniqueUrl(actual_link) # adding to the counting set
                     list_of_urls.append(actual_link)
+
+
 
     print(f" Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
     #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
