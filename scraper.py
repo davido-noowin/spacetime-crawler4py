@@ -5,6 +5,7 @@ import pickle
 from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
+from nltk.tokenize import word_tokenize # pip install nltk
 import urllib.robotparser
 
 
@@ -22,6 +23,8 @@ URL_DISSIMILARITY_MINIMUM = 0.8
 
 
 unique_urls = set()
+max_num_words = 0
+longest_url = ""
 
 try:
     with open('unique_urls.pkl', 'rb') as file:
@@ -113,6 +116,7 @@ def updateUniqueUrl(url: str) -> None:
     write to the pickle file in case something goes wrong then we have some data that
     we can still recover
     '''
+    # TODO: TEST
     unique_urls.add(url)
     if len(unique_urls) % 50 == 0:  # Or choose a different interval
         try:
@@ -120,6 +124,21 @@ def updateUniqueUrl(url: str) -> None:
                 pickle.dump(unique_urls, file)
         except Exception as e:
             print(f"Error saving unique_urls set: {e}")
+
+
+def updateWordCount(parsed_html: BeautifulSoup, url:str) -> None:
+    '''
+    Checks the text of the parsed html, preprocesses it to remove any whitespace then
+    checks to see if it is the longest page
+    '''
+    # TODO: TEST
+    text = parsed_html.get_text(strip=True)
+    tokenized_words = word_tokenize(text)
+    word_count = len(tokenized_words)
+
+    if word_count > max_num_words:
+        max_num_words = word_count
+        longest_url = url
 
 
 #Peter: takes url, resp, bfs_depth
@@ -207,6 +226,7 @@ def extract_next_links(url, resp, bfs_depth):
                 before_urlsDifferentEnough += 1
                 if urlsDifferentEnough(url, actual_link):
                     updateUniqueUrl(actual_link) # adding to the counting set
+                    updateWordCount(parsed_html, actual_link)
                     list_of_urls.append(actual_link)
 
 
