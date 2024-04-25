@@ -1,6 +1,7 @@
 import re
 import shelve
 import fnmatch
+import pickle
 from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
@@ -13,6 +14,8 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.informatics.uci.edu/*', 
           '*.stat.uci.edu/*']
 
+
+unique_urls = set()
 
 def checkPath(url: str) -> bool:
     '''
@@ -81,6 +84,11 @@ def removeFragment(url: str) -> str:
 
 
 def scraper(url: str, resp: Response) -> list:
+    try:
+        with open('unique_urls.pkl', 'rb') as file:
+            unique_urls = pickle.load(file)
+    except (FileNotFoundError, EOFError):
+        unique_urls = set()
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -151,6 +159,10 @@ def extract_next_links(url, resp):
             actual_link = removeFragment(actual_link) # defragment the link
             
             if isValidDomain(actual_link):
+                if len(unique_urls) % 50 == 0:
+                    with open('unique_urls.pkl', 'wb') as file:
+                        pickle.dump(unique_urls, file)
+                unique_urls.add(actual_link)
                 list_of_urls.append(actual_link)
 
     return list_of_urls
