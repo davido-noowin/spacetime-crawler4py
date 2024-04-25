@@ -13,6 +13,9 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.informatics.uci.edu/*', 
           '*.stat.uci.edu/*']
 
+#Peter: might have to tune. the closer to 1, the more stringent
+URL_DISSIMILARITY_MINIMUM = 0.8
+
 
 def checkPath(url: str) -> bool:
     '''
@@ -69,6 +72,17 @@ def isValidDomain(url: str) -> bool:
             return True
     return False
 
+#TODO also want text tag ratio and still a depth cap as a fallback
+def urlsDifferentEnough(parent, child):
+    #if child and parent are identical up to the query, then no
+    if (parent[:parent.rfind('?')] == child[:child.rfind('?')]):
+        return False
+    #if child has too many recurring tokens, then no
+    toks = child[child.find("//") + 2:].split('/')
+    if len(set(toks)) / len(toks) < URL_DISSIMILARITY_MINIMUM:
+        return False
+    return True
+
 
 def removeFragment(url: str) -> str:
     '''
@@ -111,17 +125,8 @@ def extract_next_links(url, resp):
     print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
     list_of_urls = []
 
-    #Peter: hardcoding against some traps for now to see how many there are
+    #Peter: used to hardcode against some traps for now to see how many there are
     #  not good, but i am just trying to find patterns
-    if url.endswith("stayconnected/stayconnected/stayconnected/index.php") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php/projects:maint-spring-2021") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php/virtual_environments:jupyterhub") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php") or \
-        url.startswith("http://archive.ics.uci.edu/ml/datasets.php") or \
-        url.startswith("https://tippersweb.ics.uci.edu") or \
-        "ics.uci.edu/ugrad/honors/index.php" in url or \
-        url.startswith("https://swiki.ics.uci.edu/doku.php"):
-        return []
 
     if resp.status == 200:
         print("ACCESSING VALID URL")
@@ -150,7 +155,8 @@ def extract_next_links(url, resp):
 
             actual_link = removeFragment(actual_link) # defragment the link
             
-            if isValidDomain(actual_link):
+            #Peter: tooSimilar()
+            if isValidDomain(actual_link) and urlsDifferentEnough(url, actual_link):
                 list_of_urls.append(actual_link)
 
     return list_of_urls
