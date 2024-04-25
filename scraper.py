@@ -242,6 +242,7 @@ def extract_next_links(url, resp, bfs_depth):
     #  not good, but i am just trying to find patterns
 
     #Peter: bfs pruning happens here
+    #TODO print and perhaps move
     if bfs_depth >= MAX_BFS_DEPTH:
         return []
 
@@ -280,6 +281,7 @@ def extract_next_links(url, resp, bfs_depth):
                     list_of_urls.append(actual_link)
 
     print(f"Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
+    print(f"Links extracted - {len(list_of_urls)}")
     #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
         
