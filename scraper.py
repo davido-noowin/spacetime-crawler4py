@@ -95,8 +95,10 @@ def removeFragment(url: str) -> str:
 
 
 def scraper(url: str, resp: Response) -> list:
-    links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+    #Peter: putting is_valid() check in extract_next_links
+    return extract_next_links(url, resp)
+    #links = extract_next_links(url, resp)
+    #return [link for link in links if is_valid(link)]
 
 
 def extract_next_links(url, resp):
@@ -144,6 +146,7 @@ def extract_next_links(url, resp):
             print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
 
+        before_urlsDifferentEnough = 0
         for link in parsed_html.find_all('a', href=True):
             possible_link = link['href']
             actual_link = ''
@@ -155,10 +158,15 @@ def extract_next_links(url, resp):
 
             actual_link = removeFragment(actual_link) # defragment the link
             
-            #Peter: tooSimilar()
-            if isValidDomain(actual_link) and urlsDifferentEnough(url, actual_link):
-                list_of_urls.append(actual_link)
+            #Peter: urlsDifferentEnough()
+            if isValidDomain(actual_link) and is_valid(actual_link):
+                #Peter: urlsDifferentEnough()
+                #  putting this count here to print whether anything was filtered
+                before_urlsDifferentEnough += 1
+                if urlsDifferentEnough(url, actual_link):
+                    list_of_urls.append(actual_link)
 
+    print(f" Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
     return list_of_urls
         
 #Peter: call this worker.run()
