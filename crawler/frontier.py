@@ -8,7 +8,7 @@ from queue import Queue, Empty
 from utils import get_logger, get_urlhash, normalize
 from scraper import is_valid
 
-#Peter: updated to include BFS depths as a first caution against traps
+#Peter: updated to do BFS, with depths
 
 class Frontier(object):
     def __init__(self, config, restart):
@@ -55,11 +55,12 @@ class Frontier(object):
             f"total urls discovered.")
 
     #Peter: returns pair (url, bfs_depth)
-    #  the skeleton function also returned None upon IndexError (when no more to pop)
     def get_tbd_url(self):
-        if self.to_be_downloaded.empty():
+        try:
+            #he skeleton function also returned None upon IndexError. default block=True blocks indefinitely
+            return self.to_be_downloaded.get(block=False)
+        except:
             return None
-        return self.to_be_downloaded.get()
 
     #Peter: now takes url, bfs_depth instead of url
     def add_url(self, url, bfs_depth):

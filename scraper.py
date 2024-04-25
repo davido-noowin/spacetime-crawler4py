@@ -13,7 +13,7 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.informatics.uci.edu/*', 
           '*.stat.uci.edu/*']
 
-
+#TODO have to tune
 MAX_BFS_DEPTH = 5000
 
 #Peter: might have to tune. the closer to 1, the more stringent
@@ -99,11 +99,10 @@ def removeFragment(url: str) -> str:
 #Peter: takes url, resp, bfs_depth
 def scraper(url: str, resp: Response, bfs_depth: int) -> list:
     #Peter: takes url, resp, bfs_depth
+    # correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return extract_next_links(url, resp, bfs_depth)
     #links = extract_next_links(url, resp)
-    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     #return [link for link in  links if is_valid(link)]
-
 
 
 #Peter: takes url, resp, bfs_depth
@@ -130,7 +129,7 @@ def extract_next_links(url, resp, bfs_depth):
     7. Choose the next URL to visit from the remaining list of URLs.
 
     '''
-    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n bfs_depth - {bfs_depth}\n ')
+    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n bfs_depth - {bfs_depth}\n')
     list_of_urls = []
 
     #Peter: used to hardcode against some traps for now to see how many there are
@@ -171,7 +170,7 @@ def extract_next_links(url, resp, bfs_depth):
             #Peter: urlsDifferentEnough()
             if isValidDomain(actual_link) and is_valid(actual_link):
                 #Peter: urlsDifferentEnough()
-                #  putting this count here to print whether anything was filtered
+                #  putting this count here to print whether anything was filtered by urlsDifferentEnough
                 before_urlsDifferentEnough += 1
                 if urlsDifferentEnough(url, actual_link):
                     list_of_urls.append(actual_link)
@@ -180,7 +179,6 @@ def extract_next_links(url, resp, bfs_depth):
     #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
         
-#Peter: call this worker.run()
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.

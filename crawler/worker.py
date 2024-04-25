@@ -6,10 +6,6 @@ from utils import get_logger
 import scraper
 import time
 
-#Peter: map domain to time last accessed for hopefully faster crawling
-from urllib.parse import urlparse
-from collections import defaultdict
-DOMAIN_LAST_ACCESSED = defaultdict(float)
 
 #Peter: map domain to time last accessed for hopefully faster crawling
 from urllib.parse import urlparse
@@ -51,7 +47,8 @@ class Worker(Thread):
                 self.logger.info(
                     f"Failed to download {tbd_url}, status <{resp.status}>, "
                     f"using cache {self.config.cache_server}.")
-                self.frontier.mark_url_complete(tbd_url)    # mark complete, so we don't visit it again
+                #Peter: url, bfs_depth
+                self.frontier.mark_url_complete(tbd_url, bfs_depth)    # mark complete, so we don't visit it again
                 continue    # failed downloads (due to timeout error, too many redirects, other exceptions) do not get scraped
 
             self.logger.info(
