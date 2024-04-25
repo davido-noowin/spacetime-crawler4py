@@ -6,6 +6,7 @@ from utils import get_logger
 import scraper
 import time
 
+
 #Peter: map domain to time last accessed for hopefully faster crawling
 from urllib.parse import urlparse
 from collections import defaultdict
@@ -28,15 +29,10 @@ class Worker(Thread):
     # fix in the download area
     def run(self):
         while True:
-            tbd_url = self.frontier.get_tbd_url()
+            #Peter: gets pair(url, bfs_depth)
+            tbd_url, bfs_depth = self.frontier.get_tbd_url()
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
-                break
-
-            print(f"worker.run(): considering {tbd_url}")
-            if not scraper.is_valid(tbd_url):
-                print("worker.run(): Filtered by is_valid()")
-                self.frontier.mark_url_complete(tbd_url)
                 break
 
             #Peter: map domain to time last accessed for hopefully faster crawling
@@ -51,15 +47,18 @@ class Worker(Thread):
                 self.logger.info(
                     f"Failed to download {tbd_url}, status <{resp.status}>, "
                     f"using cache {self.config.cache_server}.")
-                self.frontier.mark_url_complete(tbd_url)    # mark complete, so we don't visit it again
+                #Peter: url, bfs_depth
+                self.frontier.mark_url_complete(tbd_url, bfs_depth)    # mark complete, so we don't visit it again
                 continue    # failed downloads (due to timeout error, too many redirects, other exceptions) do not get scraped
 
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
-            scraped_urls = scraper.scraper(tbd_url, resp)
+            #Peter: takes url, resp, bfs_depth
+            scraped_urls = scraper.scraper(tbd_url, resp, bfs_depth)
             for scraped_url in scraped_urls:
-                self.frontier.add_url(scraped_url)
-            self.frontier.mark_url_complete(tbd_url)
+                #Peter: appends pair (url, bfs_depth + 1)
+                self.frontier.add_url(scraped_url, bfs_depth + 1)
+            self.frontier.mark_url_complete(tbd_url, bfs_depth)
             #Peter: map domain to time last accessed for hopefully faster crawling
             #time.sleep(self.config.time_delay)

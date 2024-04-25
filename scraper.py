@@ -14,6 +14,12 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.informatics.uci.edu/*', 
           '*.stat.uci.edu/*']
 
+#TODO have to tune
+MAX_BFS_DEPTH = 5000
+
+#Peter: might have to tune. the closer to 1, the more stringent
+URL_DISSIMILARITY_MINIMUM = 0.8
+
 
 unique_urls = set()
 
@@ -72,6 +78,17 @@ def isValidDomain(url: str) -> bool:
             return True
     return False
 
+#TODO also want text tag ratio and still a depth cap as a fallback
+def urlsDifferentEnough(parent, child):
+    #if child and parent are identical up to the query, then no
+    if (parent[:parent.rfind('?')] == child[:child.rfind('?')]):
+        return False
+    #if child has too many recurring tokens, then no
+    toks = child[child.find("//") + 2:].split('/')
+    if len(set(toks)) / len(toks) < URL_DISSIMILARITY_MINIMUM:
+        return False
+    return True
+
 
 def removeFragment(url: str) -> str:
     '''
@@ -82,18 +99,17 @@ def removeFragment(url: str) -> str:
     clean_url = urlunparse(parsed_url._replace(fragment=''))
     return clean_url
 
-
-def scraper(url: str, resp: Response) -> list:
-    try:
-        with open('unique_urls.pkl', 'rb') as file:
-            unique_urls = pickle.load(file)
-    except (FileNotFoundError, EOFError):
-        unique_urls = set()
-    links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+#Peter: takes url, resp, bfs_depth
+def scraper(url: str, resp: Response, bfs_depth: int) -> list:
+    #Peter: takes url, resp, bfs_depth
+    # correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
+    return extract_next_links(url, resp, bfs_depth)
+    #links = extract_next_links(url, resp)
+    #return [link for link in  links if is_valid(link)]
 
 
-def extract_next_links(url, resp):
+#Peter: takes url, resp, bfs_depth
+def extract_next_links(url, resp, bfs_depth):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -116,19 +132,14 @@ def extract_next_links(url, resp):
     7. Choose the next URL to visit from the remaining list of URLs.
 
     '''
-    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
+    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n bfs_depth - {bfs_depth}\n')
     list_of_urls = []
 
-    #Peter: hardcoding against some traps for now to see how many there are
+    #Peter: used to hardcode against some traps for now to see how many there are
     #  not good, but i am just trying to find patterns
-    if url.endswith("stayconnected/stayconnected/stayconnected/index.php") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php/projects:maint-spring-2021") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php/virtual_environments:jupyterhub") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php") or \
-        url.startswith("http://archive.ics.uci.edu/ml/datasets.php") or \
-        url.startswith("https://tippersweb.ics.uci.edu") or \
-        "ics.uci.edu/ugrad/honors/index.php" in url or \
-        url.startswith("https://swiki.ics.uci.edu/doku.php"):
+
+    #Peter: bfs pruning happens here
+    if bfs_depth >= MAX_BFS_DEPTH:
         return []
 
     if resp.status == 200:
@@ -147,6 +158,7 @@ def extract_next_links(url, resp):
             print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
 
+        before_urlsDifferentEnough = 0
         for link in parsed_html.find_all('a', href=True):
             possible_link = link['href']
             actual_link = ''
@@ -158,16 +170,18 @@ def extract_next_links(url, resp):
 
             actual_link = removeFragment(actual_link) # defragment the link
             
-            if isValidDomain(actual_link):
-                if len(unique_urls) % 50 == 0:
-                    with open('unique_urls.pkl', 'wb') as file:
-                        pickle.dump(unique_urls, file)
-                unique_urls.add(actual_link)
-                list_of_urls.append(actual_link)
+            #Peter: urlsDifferentEnough()
+            if isValidDomain(actual_link) and is_valid(actual_link):
+                #Peter: urlsDifferentEnough()
+                #  putting this count here to print whether anything was filtered by urlsDifferentEnough
+                before_urlsDifferentEnough += 1
+                if urlsDifferentEnough(url, actual_link):
+                    list_of_urls.append(actual_link)
 
+    print(f" Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
+    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
         
-#Peter: call this worker.run()
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
