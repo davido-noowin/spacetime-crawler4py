@@ -4,6 +4,7 @@ import time
 
 from utils.response import Response
 
+# TODO ANGELA: ARE THESE NUMBERS GOOD?
 MAX_REDIRECT = 10
 MAX_TIMEOUT_SECONDS = 20
 MAX_BYTE_SIZE = 1000000
@@ -52,7 +53,7 @@ def download(url, config, logger=None):
         return False
 
     except requests.Timeout:    # if more than 20 seconds passes without receiving a response, we raise a timeout error
-        print("TIMEOUT ERROR: page timed out")
+        print("TIMEOUT ERROR: Page Timed Out")
         return False
     
     except Exception as e:      # if there are other exceptions, return false to worker.py

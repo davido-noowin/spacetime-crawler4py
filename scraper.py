@@ -1,10 +1,21 @@
 import re
 import shelve
 import fnmatch
+import pickle
 from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
+from nltk.tokenize import word_tokenize # pip install nltk
 import urllib.robotparser
+from collections import Counter
+import nltk
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+nltk.download('punkt')
+
+#Peter: profiling
+import time
+
 
 
 
@@ -12,6 +23,23 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.cs.uci.edu/*', 
           '*.informatics.uci.edu/*', 
           '*.stat.uci.edu/*']
+
+#TODO have to tune
+MAX_BFS_DEPTH = 5000
+
+#Peter: might have to tune. the closer to 1, the more stringent
+URL_DISSIMILARITY_MINIMUM = 0.8
+
+
+unique_urls = set()
+num_words = 0
+longest_url = ""
+
+try:
+    with open('unique_urls.pkl', 'rb') as file:
+        unique_urls = pickle.load(file)
+except (FileNotFoundError, EOFError):
+    unique_urls = set()
 
 
 def checkPath(url: str) -> bool:
@@ -69,6 +97,18 @@ def isValidDomain(url: str) -> bool:
             return True
     return False
 
+#TODO print and see if filtered URLs are actually right, eg 4 filtered from https://www.ics.uci.edu/about
+#TODO also want text tag ratio and still a depth cap as a fallback
+def urlsDifferentEnough(parent, child):
+    #if child and parent are identical up to the query, then no
+    if (parent[:parent.rfind('?')] == child[:child.rfind('?')]):
+        return False
+    #if child has too many recurring tokens, then no
+    toks = child[child.find("//") + 2:].split('/')
+    if len(set(toks)) / len(toks) < URL_DISSIMILARITY_MINIMUM:
+        return False
+    return True
+
 
 def removeFragment(url: str) -> str:
     '''
@@ -80,12 +120,103 @@ def removeFragment(url: str) -> str:
     return clean_url
 
 
-def scraper(url: str, resp: Response) -> list:
-    links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+def updateUniqueUrl(url: str) -> None:
+    '''
+    Appends the current URL to the unique url set. Periodically (50 urls) it will
+    write to the pickle file in case something goes wrong then we have some data that
+    we can still recover
+    '''
+    # TODO: TEST
+    unique_urls.add(url)
+    if len(unique_urls) % 50 == 0:  # Or choose a different interval
+        try:
+            with open('unique_urls.pkl', 'wb') as file:
+                pickle.dump(unique_urls, file)
+        except Exception as e:
+            print(f"Error saving unique_urls set: {e}")
+
+def tokenizer(parsed_html: BeautifulSoup) -> str:
+    text = parsed_html.get_text(strip=True)
+    return word_tokenize(text)
+
+def updateWordCount(tokenized_words: str, url:str) -> None:
+    '''
+    Checks the text of the parsed html, preprocesses it to remove any whitespace then
+    checks to see if it is the longest page
+    '''
+    # TODO: TEST
+    word_count = len(tokenized_words)
+    global num_words
+    global longest_url
+
+    if word_count > num_words:
+        num_words = word_count
+        longest_url = url
+        
+def subDomainCount(url: str):
+    '''
+    Counts number of unique "ics.uci.edu" subdomains, stores in 
+    shelve and needs to be retrieved after the program is done running to get the data.
+    Restarting the crawler with --restart will also reset this shelve
+    '''
+    with shelve.open('subdomain_counts.db', writeback=True) as db:
+            if 'subdomain_counts' not in db:
+                db['subdomain_counts'] = {}
+
+            if ".ics.uci.edu" in url:
+                parsedUrl = urlparse(url)
+                # Reconstruct the URL without the path, then store in shelve + 1
+                subdomain_url = parsedUrl.scheme + "://" + parsedUrl.netloc
+                subdomain_counts = db['subdomain_counts']
+                subdomain_counts[subdomain_url] = subdomain_counts.get(subdomain_url, 0) + 1
+                db['subdomain_counts'] = subdomain_counts
+               #for key, value in db.items():
+                   #print(f"DEBUG ENTIRE SHELF= {key}: {value}")
+
+def wordFreqCount(tokenized_words):
+    '''
+    Counts frequency of each word, stores in shelve
+    shelve file needs to be retrieved and sorted after the program is done running to get the data.
+    Restarting the crawler with --restart will also reset this shelve
+    '''
+    word_counter = Counter()
+    words = tokenized_words
+    stop_words = set(stopwords.words('english'))
+    words = [word.lower() for word in words if word.isalpha() and word not in stop_words]
+    word_counter.update(words)
+    
+    with shelve.open('word_frequencies.db') as wordFreq:
+        for word, count in word_counter.items():
+            wordFreq[word] = wordFreq.get(word, 0) + count
+        if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
+            sorted_word_freq = sorted(word_counter.items(), key=lambda x: x[1], reverse=True)
+            top_words = sorted_word_freq[:1000]
+            wordFreq.clear()
+            for word, count in top_words:
+                wordFreq[word] = count
+        #sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
+        #print(sorted_word_freq[:50])
+   
 
 
-def extract_next_links(url, resp):
+#Peter: takes url, resp, bfs_depth
+def scraper(url: str, resp: Response, bfs_depth: int) -> list:
+    #Peter: takes url, resp, bfs_depth
+    # correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
+    extracted_links_to_scrape = extract_next_links(url, resp, bfs_depth)
+    if len(extracted_links_to_scrape) == 0: 
+        try:
+            with open('unique_urls.pkl', 'wb') as file:
+                pickle.dump(unique_urls, file)
+        except Exception as e:
+            print(f"Error saving unique_urls set on shutdown: {e}")
+    return extracted_links_to_scrape
+    #links = extract_next_links(url, resp)
+    #return [link for link in  links if is_valid(link)]
+
+
+#Peter: takes url, resp, bfs_depth
+def extract_next_links(url, resp, bfs_depth):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -108,37 +239,34 @@ def extract_next_links(url, resp):
     7. Choose the next URL to visit from the remaining list of URLs.
 
     '''
-    print(f'\nDEBUG: url - {url} \nresponse url - {resp.url} \nresponse status - {resp.status} \nresponse error - {resp.error}\n')
+    print(f'URL - {url} \nresponse URL - {resp.url} \nResponse Status - {resp.status} \nResponse Error - {resp.error}\nbfs_depth - {bfs_depth}')
     list_of_urls = []
 
-    #Peter: hardcoding against some traps for now to see how many there are
+    #Peter: used to hardcode against some traps for now to see how many there are
     #  not good, but i am just trying to find patterns
-    if url.endswith("stayconnected/stayconnected/stayconnected/index.php") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php/projects:maint-spring-2021") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php/virtual_environments:jupyterhub") or \
-        url.startswith("https://wiki.ics.uci.edu/doku.php") or \
-        url.startswith("http://archive.ics.uci.edu/ml/datasets.php") or \
-        url.startswith("https://tippersweb.ics.uci.edu") or \
-        "ics.uci.edu/ugrad/honors/index.php/computing" in url or \
-        url.startswith("https://swiki.ics.uci.edu/doku.php"):
+
+    #Peter: bfs pruning happens here
+    #TODO print and perhaps move
+    if bfs_depth >= MAX_BFS_DEPTH:
         return []
 
+    before_urlsDifferentEnough = 0
     if resp.status == 200:
-        print("ACCESSING VALID URL")
+        print("ACCESSING VALID URL STATUS 200")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
-        #TODO should this happen after the BeautifulSoup?
-        # check if robots.txt file says it's okay to crawl
-        if not checkRobotsTxt(resp.url):
-            print("This URL cannot be crawled due to robots.txt")
-            return []
-        
         #TODO PETER if no significant content, return []
         #  TODO check with group
         if lowInformationValue(parsed_html):
             print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
 
+        text = tokenizer(parsed_html)
+        subDomainCount(resp.url)
+        wordFreqCount(text)
+        updateUniqueUrl(resp.url) # adding to the counting set
+        updateWordCount(text, resp.url)
+        
         for link in parsed_html.find_all('a', href=True):
             possible_link = link['href']
             actual_link = ''
@@ -150,11 +278,25 @@ def extract_next_links(url, resp):
 
             actual_link = removeFragment(actual_link) # defragment the link
             
-            if isValidDomain(actual_link):
-                list_of_urls.append(actual_link)
+            #Peter: urlsDifferentEnough()
+            if isValidDomain(actual_link) and is_valid(actual_link):
+                #Peter: urlsDifferentEnough()
+                #  putting this count here to print whether anything was filtered by urlsDifferentEnough
+                before_urlsDifferentEnough += 1
+                if urlsDifferentEnough(url, actual_link):
+                    #time_0 = time.time()
 
+                    #print(f"updateUniqueUrl: {time_1 - time_0}")
+                    #print(f"updateWordCount: {time_2 - time_1}")
+                    #print(f"subDomainCount: {time_3 - time_2}")
+                    #print(f"wordFreqCount: {time_4 - time_3}")
+
+                    list_of_urls.append(actual_link)
+
+    print(f"Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
+    print(f"Links extracted - {len(list_of_urls)}")
+    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
-        
         
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -162,7 +304,7 @@ def is_valid(url):
     # There are already some conditions that return False.
     try:
         parsed = urlparse(url)
-        if parsed.scheme not in set(["http", "https"]):
+        if parsed.scheme not in {"http", "https"}:
             return False
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -173,9 +315,9 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1|ppsx|pps|mat"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|py|sql|c|cpp|out|test|mod|tag|info|Z|lisp|cc"
-            + r"|col|r"
+            + r"|col|r|apk|img|war|java|bam"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
-        raise
+        return False
