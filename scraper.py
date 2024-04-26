@@ -232,7 +232,7 @@ def wordFreqCount(tokenized_words):
             for word, count in word_counter.items():
                 wordFreq[word] = wordFreq.get(word, 0) + count
             if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
-                sorted_word_freq = sorted(word_counter.items(), key=lambda x: x[1], reverse=True)
+                sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
                 top_words = sorted_word_freq[:1000]
                 wordFreq.clear()
                 for word, count in top_words:
