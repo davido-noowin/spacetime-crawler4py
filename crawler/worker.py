@@ -80,9 +80,8 @@ class Worker(Thread):
                 finally:
                     # if we cannot download, we skip this iteration
                     if resp is False:
-                        self.logger.info(
-                            f"Failed to download {tbd_url}, status <{resp.status}>, "
-                            f"using cache {self.config.cache_server}.")
+                        print(
+                            f"Failed to download {tbd_url}.")
                         #Peter: url, bfs_depth
                         self.frontier.mark_url_complete(tbd_url, bfs_depth)    # mark complete even if url timed out
                         continue
