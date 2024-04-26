@@ -11,6 +11,11 @@ from urllib.parse import urlparse
 from collections import defaultdict
 DOMAIN_LAST_ACCESSED = defaultdict(float)
 
+# stop crawling if webpage takes too long to connect
+import time
+import timeout_decorator # AI Tutor for this assignment suggested to use the timeout_decorator package
+# information on the timeout_decorator was found through this link: https://pypi.org/project/timeout-decorator/
+
 
 class Worker(Thread):
     def __init__(self, worker_id, config, frontier):
@@ -23,9 +28,7 @@ class Worker(Thread):
         super().__init__(daemon=True)
         
 
-    # 6. detect and avoid urls that return 200 but have no data
-    # (pages that return a 200 code, but can't open)
-    # fix in the download area
+    @timeout_decorator.timeout(20, timeout_exception=StopIteration) # sets the timeout period at 20 seconds
     def run(self):
         while True:
             tbd_url = self.frontier.get_tbd_url()
@@ -42,6 +45,7 @@ class Worker(Thread):
 
             # if we encounter some error during the download, we skip this iteration
             if resp is False:
+                # SHOULD WE LOG OR PRINT THIS?
                 self.logger.info(
                     f"Failed to download {tbd_url}, status <{resp.status}>, "
                     f"using cache {self.config.cache_server}.")
