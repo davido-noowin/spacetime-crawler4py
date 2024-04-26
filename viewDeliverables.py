@@ -2,16 +2,15 @@ import pickle
 import shelve
 
 def listUniquePages():
-    # TODO: change to shelf instead of pickle
-    with open('unique_urls.pkl', 'rb') as file:
-        data = pickle.load(file)
-
-    print(len(data))
+    with shelve.open('unique_urls.db', 'r') as shelf:
+        print(len(shelf['unique_urls']))
 
 
 def listMostWords():
-    # TODO - David
-    pass
+    with shelve.open('max_num_words.db', 'r') as shelf:
+        for key in shelf:
+            value = shelf[key]
+            print(f'Key: {key}, Value: {value}')
 
 
 def listSubdomainCounts():

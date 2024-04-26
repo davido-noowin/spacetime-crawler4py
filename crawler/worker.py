@@ -82,6 +82,7 @@ class Worker(Thread):
                     
                 else:
                     #Peter: pretty print
+                    #TODO should move this a bit higher. for example, robot output groups under the previous url not this one
                     print(f"{'DEBUG':=^100}")
                     self.logger.info(
                         f"Downloaded {tbd_url}, status <{resp.status}>, "
