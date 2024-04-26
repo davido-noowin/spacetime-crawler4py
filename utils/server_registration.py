@@ -5,9 +5,9 @@ from utils.pcc_models import Register
 
 # TODO ANGELA: ARE THESE NUMBERS GOOD?
 # stop program if server takes too long to connect
-import timeout_decorator            # AI Tutor suggested to use the timeout_decorator package
+import timeout_decorator            # pip install timeout-decorator
 MAX_SERVER_TIMEOUT = 20             # timeout period for the server
-# (information on timeout_decorator was found through this link: https://pypi.org/project/timeout-decorator/)
+# AI Tutor suggested to use the timeout_decorator package (information on timeout_decorator was found through this link: https://pypi.org/project/timeout-decorator/)
 
 
 def init(df, user_agent, fresh):

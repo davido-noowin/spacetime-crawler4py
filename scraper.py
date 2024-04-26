@@ -142,27 +142,27 @@ def updateUniqueUrl(url: str) -> None:
         print(f"Error saving unique_urls set: {e}")
 
 
-def crcSimhashDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
-    '''
-    docstring goes here TODO
-    '''
-    with shelve.open("crc.db", writeback=True) as crc_db:
-        with shelve.open("simhash.db", writeback=True) as simhash_db:
-            #crc chunk
-            crc = binascii.crc32(get_text.encode(encoding="utf-8"))
-            if str(crc) in crc_db:
-                return False
+# def crcSimhashDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
+#     '''
+#     docstring goes here TODO
+#     '''
+#     with shelve.open("crc.db", writeback=True) as crc_db:
+#         with shelve.open("simhash.db", writeback=True) as simhash_db:
+#             #crc chunk
+#             crc = binascii.crc32(get_text.encode(encoding="utf-8"))
+#             if str(crc) in crc_db:
+#                 return False
             
-            #simhash chunk
-            the_simhash = simhash.Simhash(get_text, f = SIMHASH_FINGERPRINT_BITS)
-            #if already in, return False
-            if any(the_simhash.distance(int(other_simhash)) > SIMHASH_THRESHOLD for other_simhash in simhash_db):
-                return False
+#             #simhash chunk
+#             the_simhash = simhash.Simhash(get_text, f = SIMHASH_FINGERPRINT_BITS)
+#             #if already in, return False
+#             if any(the_simhash.distance(int(other_simhash)) > SIMHASH_THRESHOLD for other_simhash in simhash_db):
+#                 return False
 
-            #only need to store keys, so None as value
-            crc_db[str(crc)] = None
-            simhash_db[str(the_simhash)] = None
-            return True
+#             #only need to store keys, so None as value
+#             crc_db[str(crc)] = None
+#             simhash_db[str(the_simhash)] = None
+#             return True
 
 
 #Peter: pull get_text out 
@@ -283,12 +283,12 @@ def extract_next_links(url, resp, bfs_depth):
         #strip=False
         get_text = parsed_html.get_text(strip=False)
 
-        #TODO keep print nice and accurate, check that this fits the flow of the function
-        #iff near or exact duplicate of an already seen page, return False
-        #otherwise, crc and simhash are computed and shelved
-        if crcSimhashDuplicateCheck(get_text):
-            print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
-            return []
+        # #TODO keep print nice and accurate, check that this fits the flow of the function
+        # #iff near or exact duplicate of an already seen page, return False
+        # #otherwise, crc and simhash are computed and shelved
+        # if crcSimhashDuplicateCheck(get_text):
+        #     print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
+        #     return []
 
         text = tokenizer(get_text)
         subDomainCount(resp.url)

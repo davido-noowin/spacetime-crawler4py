@@ -16,9 +16,9 @@ DOMAIN_LAST_ACCESSED = defaultdict(float)
 
 # TODO ANGELA: ARE THESE NUMBERS GOOD?
 # stop crawling if webpage takes too long to respond, download, scrape
-import timeout_decorator            # AI Tutor suggested to use the timeout_decorator package
+import timeout_decorator            # pip install timeout-decorator
 MAX_WEBPAGE_TIMEOUT = 30            # timeout period for each webpage
-# (information on timeout_decorator was found through this link: https://pypi.org/project/timeout-decorator/)
+# AI Tutor suggested to use the timeout_decorator package (information on timeout_decorator was found through this link: https://pypi.org/project/timeout-decorator/)
 
 
 class Worker(Thread):
