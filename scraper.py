@@ -135,15 +135,16 @@ def updateUniqueUrl(url: str) -> None:
         except Exception as e:
             print(f"Error saving unique_urls set: {e}")
 
+def tokenizer(parsed_html: BeautifulSoup) -> str:
+    text = parsed_html.get_text(strip=True)
+    return word_tokenize(text)
 
-def updateWordCount(parsed_html: BeautifulSoup, url:str) -> None:
+def updateWordCount(tokenized_words: str, url:str) -> None:
     '''
     Checks the text of the parsed html, preprocesses it to remove any whitespace then
     checks to see if it is the longest page
     '''
     # TODO: TEST
-    text = parsed_html.get_text(strip=True)
-    tokenized_words = word_tokenize(text)
     word_count = len(tokenized_words)
     global num_words
     global longest_url
@@ -172,29 +173,29 @@ def subDomainCount(url: str):
                #for key, value in db.items():
                    #print(f"DEBUG ENTIRE SHELF= {key}: {value}")
 
-def wordFreqCount(parsed_html):
+def wordFreqCount(tokenized_words):
     '''
     Counts frequency of each word, stores in shelve
     shelve file needs to be retrieved and sorted after the program is done running to get the data.
     Restarting the crawler with --restart will also reset this shelve
     '''
-    # Initialize a counter to store word frequencies
     word_counter = Counter()
-    
-    paragraphs = parsed_html.find_all('p')
-    text = ' '.join([p.get_text() for p in paragraphs])
-    words = nltk.word_tokenize(text)
+    words = tokenized_words
     stop_words = set(stopwords.words('english'))
-    words = [word.lower() for word in words if (word.isalpha() and word not in stop_words)]
+    words = [word.lower() for word in words if word.isalpha() and word not in stop_words]
     word_counter.update(words)
     
-    #Update the word frequencies in the Shelve database
     with shelve.open('word_frequencies.db') as wordFreq:
-    
         for word, count in word_counter.items():
             wordFreq[word] = wordFreq.get(word, 0) + count
-            #Need to sort from largest freq to smallest, but we
-            #can do this after running the program for efficiency
+        if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
+            sorted_word_freq = sorted(word_counter.items(), key=lambda x: x[1], reverse=True)
+            top_words = sorted_word_freq[:1000]
+            wordFreq.clear()
+            for word, count in top_words:
+                wordFreq[word] = count
+        #sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
+        #print(sorted_word_freq[:50])
    
 
 
@@ -259,6 +260,12 @@ def extract_next_links(url, resp, bfs_depth):
         if lowInformationValue(parsed_html):
             print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
+
+        text = tokenizer(parsed_html)
+        subDomainCount(resp.url)
+        wordFreqCount(text)
+        updateUniqueUrl(resp.url) # adding to the counting set
+        updateWordCount(text, resp.url)
         
         for link in parsed_html.find_all('a', href=True):
             possible_link = link['href']
@@ -278,14 +285,6 @@ def extract_next_links(url, resp, bfs_depth):
                 before_urlsDifferentEnough += 1
                 if urlsDifferentEnough(url, actual_link):
                     #time_0 = time.time()
-                    updateUniqueUrl(actual_link) # adding to the counting set
-                    #time_1 = time.time()
-                    updateWordCount(parsed_html, actual_link)
-                    #time_2 = time.time()
-                    subDomainCount(resp.url)
-                    #time_3 = time.time()
-                    wordFreqCount(parsed_html)
-                    #time_4 = time.time()
 
                     #print(f"updateUniqueUrl: {time_1 - time_0}")
                     #print(f"updateWordCount: {time_2 - time_1}")
