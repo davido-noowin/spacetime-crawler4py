@@ -142,31 +142,27 @@ def updateUniqueUrl(url: str) -> None:
         print(f"Error saving unique_urls set: {e}")
 
 
-def crcSimhashDuplicateCheck(get_text: BeautifulSoup.get_text) -> (bool, str):
-    '''
-    docstring goes here TODO
-    '''
-    with shelve.open("crc.db", writeback=True) as crc_db:
-        with shelve.open("simhash.db", writeback=True) as simhash_db:
-            #crc chunk
-            crc = binascii.crc32(get_text.encode(encoding="utf-8"))
-            if str(crc) in crc_db:
-                return (False, "crc")
+# def crcSimhashDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
+#     '''
+#     docstring goes here TODO
+#     '''
+#     with shelve.open("crc.db", writeback=True) as crc_db:
+#         with shelve.open("simhash.db", writeback=True) as simhash_db:
+#             #crc chunk
+#             crc = binascii.crc32(get_text.encode(encoding="utf-8"))
+#             if str(crc) in crc_db:
+#                 return False
             
-            #simhash chunk
-            the_simhash = simhash.Simhash(get_text, f = SIMHASH_FINGERPRINT_BITS)
-            #if already in, return False
-            if any(the_simhash.distance(other_simhash) > SIMHASH_THRESHOLD for other_simhash in simhash_db.values()):
-                return (False, "simhash")
+#             #simhash chunk
+#             the_simhash = simhash.Simhash(get_text, f = SIMHASH_FINGERPRINT_BITS)
+#             #if already in, return False
+#             if any(the_simhash.distance(int(other_simhash)) > SIMHASH_THRESHOLD for other_simhash in simhash_db):
+#                 return False
 
-            #TODO highest_simhash_id is tricky in the save file. think all cases in frontier.py
-            #only need to store keys, so None as value
-            crc_db[crc] = None
-            #keying by a simhash_id which has nothing to do with anything, just to force uniqueness
-            highest_simhash_id = simhash_db["highest_simhash_id"]
-            simhash_db[highest_simhash_id + 1] = the_simhash
-            simhash_db["highest_simhash_id"] = highest_simhash_id + 1
-            return (True, None)
+#             #only need to store keys, so None as value
+#             crc_db[str(crc)] = None
+#             simhash_db[str(the_simhash)] = None
+#             return True
 
 
 #Peter: pull get_text out 
@@ -236,7 +232,7 @@ def wordFreqCount(tokenized_words):
             for word, count in word_counter.items():
                 wordFreq[word] = wordFreq.get(word, 0) + count
             if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
-                sorted_word_freq = sorted(word_counter.items(), key=lambda x: x[1], reverse=True)
+                sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
                 top_words = sorted_word_freq[:1000]
                 wordFreq.clear()
                 for word, count in top_words:
@@ -287,13 +283,12 @@ def extract_next_links(url, resp, bfs_depth):
         #strip=False
         get_text = parsed_html.get_text(strip=False)
 
-        #TODO keep print nice and accurate, check that this fits the flow of the function
-        #iff near or exact duplicate of an already seen page, return False
-        #otherwise, crc and simhash are computed and shelved
-        crcSimhashDuplicateCheck_ret = crcSimhashDuplicateCheck(get_text)
-        if not crcSimhashDuplicateCheck_ret[0]:
-            print(f"Duplicate check failed on {crcSimhashDuplicateCheck_ret[1]}. Will not crawl.")
-            return []
+        # #TODO keep print nice and accurate, check that this fits the flow of the function
+        # #iff near or exact duplicate of an already seen page, return False
+        # #otherwise, crc and simhash are computed and shelved
+        # if crcSimhashDuplicateCheck(get_text):
+        #     print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
+        #     return []
 
         text = tokenizer(get_text)
         subDomainCount(resp.url)
