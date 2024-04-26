@@ -41,7 +41,7 @@ class Worker(Thread):
         #Michael: check if robots.txt file says it's okay to crawl before downloading
         if not scraper.checkRobotsTxt(tbd_url):
             print("This URL cannot be crawled due to robots.txt")
-            resp = False
+            return False
         
         resp = download(tbd_url, self.config, self.logger)
         DOMAIN_LAST_ACCESSED[domain] = time.time()
