@@ -15,7 +15,8 @@ nltk.download('punkt')
 
 #Peter: profiling
 import time
-
+#PETER TODO print url when entering into its iteration in the worker run, so that the log msg is not the first (it might take a long time to see it)
+import binascii
 
 
 
@@ -83,10 +84,6 @@ def getRobotsUrl(url:str) -> str:
         print("Can't complete robots.txt url replacement")
         return 
     
-    
-def lowInformationValue(parsed_html: BeautifulSoup) -> bool:
-    return False #TODO
-    
 
 def isValidDomain(url: str) -> bool:
     '''
@@ -135,9 +132,32 @@ def updateUniqueUrl(url: str) -> None:
         except Exception as e:
             print(f"Error saving unique_urls set: {e}")
 
-def tokenizer(parsed_html: BeautifulSoup) -> str:
-    text = parsed_html.get_text(strip=True)
-    return word_tokenize(text)
+
+def crcSimhashDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
+    '''
+    docstring goes here TODO
+    '''
+    #compute crc
+    crc = binascii.crc32(get_text.encode(encoding="utf-8"))
+    #if already in, return False
+    if crc in "TODO TODO TODO":
+        return False
+    
+    #compute simhash
+    simhash = 0xDEADBEEF
+    #if already in, return False
+    if simhash in "TODO TODO TODO":
+        return False
+
+    #else, add
+
+    return True
+
+
+#Peter: pull get_text out 
+def tokenizer(get_text: BeautifulSoup.get_text) -> list[str]:
+    #text = parsed_html.get_text(strip=True)
+    return word_tokenize(get_text)
 
 def updateWordCount(tokenized_words: str, url:str) -> None:
     '''
@@ -255,13 +275,17 @@ def extract_next_links(url, resp, bfs_depth):
         print("ACCESSING VALID URL STATUS 200")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
-        #TODO PETER if no significant content, return []
-        #  TODO check with group
-        if lowInformationValue(parsed_html):
+        #strip=False
+        get_text = parsed_html.get_text(strip=False)
+
+        #TODO keep print nice and accurate, check that this fits the flow of the function
+        #iff near or exact duplicate of an already seen page, return False
+        #otherwise, crc and simhash are computed and shelved
+        if crcSimhashDuplicateCheck(get_text):
             print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
             return []
 
-        text = tokenizer(parsed_html)
+        text = tokenizer(get_text)
         subDomainCount(resp.url)
         wordFreqCount(text)
         updateUniqueUrl(resp.url) # adding to the counting set

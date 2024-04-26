@@ -58,6 +58,7 @@ class Worker(Thread):
                 self.frontier.mark_url_complete(tbd_url, bfs_depth)    # mark complete, so we don't visit it again
                 continue    # failed downloads (due to timeout error, too many redirects, other exceptions) do not get scraped
             
+            #TODO should move this a bit higher. for example, robot output groups under the previous url not this one
             #Peter: pretty print
             print(f"{'DEBUG':=^100}")
             self.logger.info(
