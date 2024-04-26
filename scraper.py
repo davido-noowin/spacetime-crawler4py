@@ -17,8 +17,6 @@ nltk.download('punkt')
 import time
 
 
-
-
 DOMAINS = ['*.ics.uci.edu/*', 
           '*.cs.uci.edu/*', 
           '*.informatics.uci.edu/*', 
@@ -31,15 +29,8 @@ MAX_BFS_DEPTH = 5000
 URL_DISSIMILARITY_MINIMUM = 0.8
 
 
-unique_urls = set()
 num_words = 0
 longest_url = ""
-
-try:
-    with open('unique_urls.pkl', 'rb') as file:
-        unique_urls = pickle.load(file)
-except (FileNotFoundError, EOFError):
-    unique_urls = set()
 
 
 def checkPath(url: str) -> bool:
@@ -120,46 +111,59 @@ def removeFragment(url: str) -> str:
     return clean_url
 
 
+def tokenizer(parsed_html: BeautifulSoup) -> str:
+    '''
+    Tokenizes the html page so that it can be used in other functions
+    '''
+    text = parsed_html.get_text(strip=True)
+    return word_tokenize(text)
+
+
 def updateUniqueUrl(url: str) -> None:
     '''
     Appends the current URL to the unique url set. Periodically (50 urls) it will
     write to the pickle file in case something goes wrong then we have some data that
     we can still recover
     '''
-    # TODO: TEST
-    unique_urls.add(url)
-    if len(unique_urls) % 50 == 0:  # Or choose a different interval
-        try:
-            with open('unique_urls.pkl', 'wb') as file:
-                pickle.dump(unique_urls, file)
-        except Exception as e:
-            print(f"Error saving unique_urls set: {e}")
+    try:
+        with shelve.open('unique_urls.db', writeback=True) as db:
+            if 'unique_urls' not in db:
+                db['unique_urls'] = set()
 
-def tokenizer(parsed_html: BeautifulSoup) -> str:
-    text = parsed_html.get_text(strip=True)
-    return word_tokenize(text)
+            db['unique_urls'].add(url)
+    except Exception as e:
+        print(f"Error saving unique_urls set: {e}")
+
 
 def updateWordCount(tokenized_words: str, url:str) -> None:
     '''
     Checks the text of the parsed html, preprocesses it to remove any whitespace then
     checks to see if it is the longest page
     '''
-    # TODO: TEST
-    word_count = len(tokenized_words)
-    global num_words
-    global longest_url
+    try:
+        with shelve.open('max_num_words.db', writeback=True) as db:
+            if 'num_words' not in db:
+                db['num_words'] = 0
+            if 'longest_url' not in db:
+                db['longest_url'] = ""
 
-    if word_count > num_words:
-        num_words = word_count
-        longest_url = url
+            word_count = len(tokenized_words)
+
+            if word_count > num_words:
+                db['num_words'] = word_count
+                db['longest_url'] = url
+    except Exception as e:
+        print(f"Error saving the max num words of all pages: {e}")
         
+
 def subDomainCount(url: str):
     '''
     Counts number of unique "ics.uci.edu" subdomains, stores in 
     shelve and needs to be retrieved after the program is done running to get the data.
     Restarting the crawler with --restart will also reset this shelve
     '''
-    with shelve.open('subdomain_counts.db', writeback=True) as db:
+    try:
+        with shelve.open('subdomain_counts.db', writeback=True) as db:
             if 'subdomain_counts' not in db:
                 db['subdomain_counts'] = {}
 
@@ -170,8 +174,11 @@ def subDomainCount(url: str):
                 subdomain_counts = db['subdomain_counts']
                 subdomain_counts[subdomain_url] = subdomain_counts.get(subdomain_url, 0) + 1
                 db['subdomain_counts'] = subdomain_counts
-               #for key, value in db.items():
-                   #print(f"DEBUG ENTIRE SHELF= {key}: {value}")
+                #for key, value in db.items():
+                    #print(f"DEBUG ENTIRE SHELF= {key}: {value}")
+    except Exception as e:
+        print(f"Error finding the subdomain count: {e}")
+
 
 def wordFreqCount(tokenized_words):
     '''
@@ -185,34 +192,27 @@ def wordFreqCount(tokenized_words):
     words = [word.lower() for word in words if word.isalpha() and word not in stop_words]
     word_counter.update(words)
     
-    with shelve.open('word_frequencies.db') as wordFreq:
-        for word, count in word_counter.items():
-            wordFreq[word] = wordFreq.get(word, 0) + count
-        if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
-            sorted_word_freq = sorted(word_counter.items(), key=lambda x: x[1], reverse=True)
-            top_words = sorted_word_freq[:1000]
-            wordFreq.clear()
-            for word, count in top_words:
-                wordFreq[word] = count
-        #sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
-        #print(sorted_word_freq[:50])
-   
+    try:
+        with shelve.open('word_frequencies.db') as wordFreq:
+            for word, count in word_counter.items():
+                wordFreq[word] = wordFreq.get(word, 0) + count
+            if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
+                sorted_word_freq = sorted(word_counter.items(), key=lambda x: x[1], reverse=True)
+                top_words = sorted_word_freq[:1000]
+                wordFreq.clear()
+                for word, count in top_words:
+                    wordFreq[word] = count
+            #sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
+            #print(sorted_word_freq[:50])
+    except Exception as e:
+        print(f"Error finding finding the word frequency: {e}")
 
 
 #Peter: takes url, resp, bfs_depth
 def scraper(url: str, resp: Response, bfs_depth: int) -> list:
     #Peter: takes url, resp, bfs_depth
     # correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
-    extracted_links_to_scrape = extract_next_links(url, resp, bfs_depth)
-    if len(extracted_links_to_scrape) == 0: 
-        try:
-            with open('unique_urls.pkl', 'wb') as file:
-                pickle.dump(unique_urls, file)
-        except Exception as e:
-            print(f"Error saving unique_urls set on shutdown: {e}")
-    return extracted_links_to_scrape
-    #links = extract_next_links(url, resp)
-    #return [link for link in  links if is_valid(link)]
+    return extract_next_links(url, resp, bfs_depth)
 
 
 #Peter: takes url, resp, bfs_depth
@@ -228,22 +228,12 @@ def extract_next_links(url, resp, bfs_depth):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     
     '''
-    HOW TO APPROACH THIS FUNCTION:
-
-    1. Make an HTTP GET request to the target webpage to get the HTML content.
-    2. Create a Beautiful Soup object from the HTML content.
-    3. Use the object to find all `<a>` elements.
-    4. For each `<a>` element, extract the URL found in the `href` attribute.
-    5. Resolve any relative URLs to absolute URLs.
-    6. Optionally, filter out any URLs that are not of interest or are disallowed.
-    7. Choose the next URL to visit from the remaining list of URLs.
-
+    Uses the Response content and analyzes the html for possible links to add to the
+    frontier. It attempts to filter out pages that have low information value, is not
+    within the specified domains, or is not a valid web page
     '''
     print(f'URL - {url} \nresponse URL - {resp.url} \nResponse Status - {resp.status} \nResponse Error - {resp.error}\nbfs_depth - {bfs_depth}')
     list_of_urls = []
-
-    #Peter: used to hardcode against some traps for now to see how many there are
-    #  not good, but i am just trying to find patterns
 
     #Peter: bfs pruning happens here
     #TODO print and perhaps move
