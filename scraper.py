@@ -17,6 +17,7 @@ nltk.download('punkt')
 import time
 #PETER TODO print url when entering into its iteration in the worker run, so that the log msg is not the first (it might take a long time to see it)
 import binascii
+import simhash #pip install simhash
 
 
 
@@ -30,6 +31,13 @@ MAX_BFS_DEPTH = 5000
 
 #Peter: might have to tune. the closer to 1, the more stringent
 URL_DISSIMILARITY_MINIMUM = 0.8
+
+#TODO tune and test
+#credit: SEIRiP
+SIMHASH_THRESHOLD = 372
+SIMHASH_FINGERPRINT_BITS = 384
+
+#TODO want to capture the path and query too of a url in the regex filter
 
 
 num_words = 0
@@ -138,21 +146,23 @@ def crcSimhashDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
     '''
     docstring goes here TODO
     '''
-    #compute crc
-    crc = binascii.crc32(get_text.encode(encoding="utf-8"))
-    #if already in, return False
-    if crc in "TODO TODO TODO":
-        return False
-    
-    #compute simhash
-    simhash = 0xDEADBEEF
-    #if already in, return False
-    if simhash in "TODO TODO TODO":
-        return False
+    with shelve.open("crc.db", writeback=True) as crc_db:
+        with shelve.open("simhash.db", writeback=True) as simhash_db:
+            #crc chunk
+            crc = binascii.crc32(get_text.encode(encoding="utf-8"))
+            if crc in crc_db:
+                return False
+            
+            #simhash chunk
+            the_simhash = simhash.Simhash(get_text, f = SIMHASH_FINGERPRINT_BITS)
+            #if already in, return False
+            if any(the_simhash.distance(other_simhash) > SIMHASH_THRESHOLD for other_simhash in simhash_db):
+                return False
 
-    #else, add
-
-    return True
+            #only need to store keys, so None as value
+            crc_db[crc] = None
+            simhash_db[the_simhash] = None
+            return True
 
 
 #Peter: pull get_text out 
@@ -303,13 +313,6 @@ def extract_next_links(url, resp, bfs_depth):
                 #  putting this count here to print whether anything was filtered by urlsDifferentEnough
                 before_urlsDifferentEnough += 1
                 if urlsDifferentEnough(url, actual_link):
-                    #time_0 = time.time()
-
-                    #print(f"updateUniqueUrl: {time_1 - time_0}")
-                    #print(f"updateWordCount: {time_2 - time_1}")
-                    #print(f"subDomainCount: {time_3 - time_2}")
-                    #print(f"wordFreqCount: {time_4 - time_3}")
-
                     list_of_urls.append(actual_link)
 
     print(f"Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")

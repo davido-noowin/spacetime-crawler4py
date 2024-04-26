@@ -36,6 +36,10 @@ class Frontier(object):
                 os.remove('unique_urls.db')
             if os.path.exists('max_num_words.db'):
                 os.remove('max_num_words.db')
+            if os.path.exists('crc.db'):
+                os.remove('crc.db')
+            if os.path.exists('simhash.db'):
+                os.remove('simhash.db')
                 
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
