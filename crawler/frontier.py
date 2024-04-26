@@ -40,6 +40,10 @@ class Frontier(object):
                 os.remove('crc.db')
             if os.path.exists('simhash.db'):
                 os.remove('simhash.db')
+
+        #simhash relies on there always being a simhash_db["highest_simhash_id"]
+        with open("simhash.db") as simhash_db:
+            simhash_db["highest_simhash_id"] = 0
                 
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
