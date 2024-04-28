@@ -15,7 +15,6 @@ nltk.download('punkt')
 
 #profiling
 import time
-#PETER TODO print url when entering into its iteration in the worker run, so that the log msg is not the first (it might take a long time to see it)
 import binascii
 
 
@@ -25,9 +24,10 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.stat.uci.edu/*']
 
 #TODO have to tune
-MAX_BFS_DEPTH = 5000
-
-URL_DISSIMILARITY_MINIMUM = 0.6
+MAX_BFS_DEPTH = 20
+#TODO have to tune
+MAX_QUERY_STRIKES = 10
+URL_NONRECURRENCE_MINIMUM = 0.6
 
 BAD_EXTENSIONS = \
     r".*\.(css|js|bmp|gif|jpe?g|ico" + \
@@ -43,6 +43,43 @@ BAD_EXTENSIONS = \
 
 num_words = 0
 longest_url = ""
+
+
+def bfsDepthOkay(bfs_depth) -> bool:
+    #correct, since at MAX_BFS_DEPTH means that many before this 
+    if bfs_depth >= MAX_BFS_DEPTH:
+        print("BFS depth limit exceeded. Will not crawl.")
+        return False
+    return True
+
+def queryStrikesOkay(url: str) -> bool:
+    '''
+    Increments query strikes for base queryless url.
+    Returns whether the base queryless url has had too many strikes.
+    That is, too many urls like base?blah=blah.
+    '''
+    if (upto := url.rfind('?')) != -1:
+        with shelve.open("query_strikes.db") as db:
+            base = url[:upto]
+            if base not in db:
+                db[base] = 1
+            else:
+                db[base] += 1
+                #correct, since at MAX_QUERY_STRIKES means this is the MAX_QUERY_STRIKES'th
+                if db[base] > MAX_QUERY_STRIKES:
+                    print("Query strike limit exceeded. Will not crawl.")
+                    return False
+    return True
+
+def urlNonrecurrenceOkay(url: str) -> bool:
+    '''
+    Returns whether the components of the path are nonrecurring enough.
+    '''
+    url = url[:url.rfind('?')]
+    toks = url[url.find('//') + 2:].split('/')
+    if len(set(toks)) / len(toks) < URL_NONRECURRENCE_MINIMUM:
+        return False
+    return True
 
 
 def checkPath(url: str) -> bool:
@@ -95,18 +132,6 @@ def isValidDomain(url: str) -> bool:
         if fnmatch.fnmatch(url, pattern):
             return True
     return False
-
-#TODO print and see if filtered URLs are actually right, eg 4 filtered from https://www.ics.uci.edu/about
-#TODO also want text tag ratio and still a depth cap as a fallback
-def urlsDifferentEnough(parent, child):
-    #if child and parent are identical up to the query, then no
-    if (parent[:parent.rfind('?')] == child[:child.rfind('?')]):
-        return False
-    #if child has too many recurring tokens, then no
-    toks = child[child.find('//') + 2:].split('/')
-    if len(set(toks)) / len(toks) < URL_DISSIMILARITY_MINIMUM:
-        return False
-    return True
 
 
 def removeFragment(url: str) -> str:
@@ -238,8 +263,6 @@ def wordFreqCount(tokenized_words):
 
 #takes url, resp, bfs_depth
 def scraper(url: str, resp: Response, bfs_depth: int) -> list:
-    #takes url, resp, bfs_depth
-    # correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return extract_next_links(url, resp, bfs_depth)
 
 
@@ -263,20 +286,14 @@ def extract_next_links(url, resp, bfs_depth):
     print(f'URL - {url} \nresponse URL - {resp.url} \nResponse Status - {resp.status} \nResponse Error - {resp.error}\nbfs_depth - {bfs_depth}')
     list_of_urls = []
 
-    #bfs pruning happens here
-    #TODO print and perhaps move
-    if bfs_depth >= MAX_BFS_DEPTH:
-        return []
-
-    before_urlsDifferentEnough = 0
-    if resp.status == 200:
+    before_urlNonrecurrenceOkay = 0 #for printing
+    #conditions for crawling. bfsDepthOkay and queryStrikesOkay print on fail
+    if resp.status == 200 and bfsDepthOkay(bfs_depth) and queryStrikesOkay(resp.url):
         print("ACCESSING VALID URL STATUS 200")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
 
-        #strip=False
         get_text = parsed_html.get_text(strip=False)
 
-        # #TODO keep print nice and accurate, check that this fits the flow of the function
         # #iff exact duplicate of an already seen page, return False
         # #otherwise, crc is computed and shelved
         # if crcDuplicateCheck(get_text):
@@ -300,27 +317,24 @@ def extract_next_links(url, resp, bfs_depth):
 
             actual_link = removeFragment(actual_link) # defragment the link
             
-            #urlsDifferentEnough()
             if isValidDomain(actual_link) and is_valid(actual_link):
-                #urlsDifferentEnough()
-                #  putting this count here to print whether anything was filtered by urlsDifferentEnough
-                before_urlsDifferentEnough += 1
-                if urlsDifferentEnough(url, actual_link):
+                #for printing whether anything was filtered by urlsDifferentEnough
+                before_urlNonrecurrenceOkay += 1
+                if urlNonrecurrenceOkay(url):
                     list_of_urls.append(actual_link)
 
-    print(f"Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
+    print(f"Filtered by urlNonrecurrenceOkay - {before_urlNonrecurrenceOkay - len(list_of_urls)}")
     print(f"Links extracted - {len(list_of_urls)}")
-    #correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
-    return list_of_urls
+    return list_of_urls #correct and intentional to have a list of only url's without bfs_depth's here
         
 def is_valid(url):
-    # Decide whether to crawl this url or not. 
-    # If you decide to crawl it, return True; otherwise return False.
-    # There are already some conditions that return False.
+    # File extension checks for whether to crawl this url
+    #  both for path and for query
     try:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
             return False
+        #if no query, then the empty string does not match and all is well
         return not re.match(BAD_EXTENSIONS, parsed.path.lower()) and not re.match(BAD_EXTENSIONS, parsed.query.lower())
 
     except TypeError:

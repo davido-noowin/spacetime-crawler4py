@@ -38,6 +38,8 @@ class Frontier(object):
                 os.remove('max_num_words.db')
             if os.path.exists('crc.db'):
                 os.remove('crc.db')
+            if os.path.exists('query_strikes.db'):
+                os.remove('query_strikes.db')
                 
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
