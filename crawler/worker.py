@@ -8,7 +8,7 @@ import time
 import urllib.robotparser
 
 
-#Peter: map domain to time last accessed for hopefully faster crawling
+#map domain to time last accessed for hopefully faster crawling
 from urllib.parse import urlparse
 from collections import defaultdict
 DOMAIN_LAST_ACCESSED = defaultdict(float)
@@ -50,17 +50,17 @@ class Worker(Thread):
 
     def run(self):
         while True:
-            #Peter: gets pair(url, bfs_depth)
+            #gets pair(url, bfs_depth)
             tbd_url, bfs_depth = self.frontier.get_tbd_url()
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break
-
-            #Peter: map domain to time last accessed for hopefully faster crawling
+            
+            print(f"{'DEBUG':=^100}")
+            #map domain to time last accessed for hopefully faster crawling
             domain = urlparse(tbd_url).netloc
             if (wait_time := self.config.time_delay - (time.time() - DOMAIN_LAST_ACCESSED[domain])) >= 0.0:
                 time.sleep(wait_time)
-
 
             # we time accessing robots.txt and downloading each webpage
             # (ThreadPoolExecutor base code from AI Tutor)
@@ -82,24 +82,19 @@ class Worker(Thread):
                     if resp is False:
                         print(
                             f"Failed to download {tbd_url}.")
-                        #Peter: url, bfs_depth
+                        #url, bfs_depth
                         self.frontier.mark_url_complete(tbd_url, bfs_depth)    # mark complete even if url timed out
                         continue
                         
                     else:
-                        #Peter: pretty print
-                        #TODO should move this a bit higher. for example, robot output groups under the previous url not this one
-                        print(f"{'DEBUG':=^100}")
                         self.logger.info(
                             f"Downloaded {tbd_url}, status <{resp.status}>, "
                             f"using cache {self.config.cache_server}.")
-                        #Peter: takes url, resp, bfs_depth
                         scraped_urls = scraper.scraper(tbd_url, resp, bfs_depth)
                         for scraped_url in scraped_urls:
-                            #Peter: appends pair (url, bfs_depth + 1)
                             self.frontier.add_url(scraped_url, bfs_depth + 1)
 
                         self.frontier.mark_url_complete(tbd_url, bfs_depth)
 
-                        #Peter: map domain to time last accessed for hopefully faster crawling
+                        #map domain to time last accessed for hopefully faster crawling
                         #time.sleep(self.config.time_delay)

@@ -13,12 +13,10 @@ from nltk.corpus import stopwords
 nltk.download('stopwords')
 nltk.download('punkt')
 
-#Peter: profiling
+#profiling
 import time
 #PETER TODO print url when entering into its iteration in the worker run, so that the log msg is not the first (it might take a long time to see it)
 import binascii
-import simhash #pip install simhash
-
 
 
 DOMAINS = ['*.ics.uci.edu/*', 
@@ -29,16 +27,19 @@ DOMAINS = ['*.ics.uci.edu/*',
 #TODO have to tune
 MAX_BFS_DEPTH = 5000
 
-#Peter: might have to tune. the closer to 1, the more stringent
-URL_DISSIMILARITY_MINIMUM = 0.8
+URL_DISSIMILARITY_MINIMUM = 0.6
 
-#TODO tune and test
-#credit: SEIRiP
-SIMHASH_THRESHOLD = 372
-SIMHASH_FINGERPRINT_BITS = 384
-
-#TODO want to capture the path and query too of a url in the regex filter
-
+BAD_EXTENSIONS = \
+    r".*\.(css|js|bmp|gif|jpe?g|ico" + \
+    r"|png|tiff?|mid|mp2|mp3|mp4" + \
+    r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf" + \
+    r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names" + \
+    r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso" + \
+    r"|epub|dll|cnf|tgz|sha1|ppsx|pps|mat" + \
+    r"|thmx|mso|arff|rtf|jar|csv" + \
+    r"|py|sql|c|cpp|out|test|mod|tag|info|Z|lisp|cc" + \
+    r"|col|r|apk|img|war|java|bam" + \
+    r"|rm|smil|wmv|swf|wma|zip|rar|gz)$"      
 
 num_words = 0
 longest_url = ""
@@ -102,7 +103,7 @@ def urlsDifferentEnough(parent, child):
     if (parent[:parent.rfind('?')] == child[:child.rfind('?')]):
         return False
     #if child has too many recurring tokens, then no
-    toks = child[child.find("//") + 2:].split('/')
+    toks = child[child.find('//') + 2:].split('/')
     if len(set(toks)) / len(toks) < URL_DISSIMILARITY_MINIMUM:
         return False
     return True
@@ -142,30 +143,22 @@ def updateUniqueUrl(url: str) -> None:
         print(f"Error saving unique_urls set: {e}")
 
 
-# def crcSimhashDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
+# def crcDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
 #     '''
 #     docstring goes here TODO
 #     '''
 #     with shelve.open("crc.db", writeback=True) as crc_db:
-#         with shelve.open("simhash.db", writeback=True) as simhash_db:
-#             #crc chunk
-#             crc = binascii.crc32(get_text.encode(encoding="utf-8"))
-#             if str(crc) in crc_db:
-#                 return False
-            
-#             #simhash chunk
-#             the_simhash = simhash.Simhash(get_text, f = SIMHASH_FINGERPRINT_BITS)
-#             #if already in, return False
-#             if any(the_simhash.distance(int(other_simhash)) > SIMHASH_THRESHOLD for other_simhash in simhash_db):
-#                 return False
-
-#             #only need to store keys, so None as value
-#             crc_db[str(crc)] = None
-#             simhash_db[str(the_simhash)] = None
-#             return True
+#         #crc chunk
+#         crc = binascii.crc32(get_text.encode(encoding="utf-8"))
+#         if str(crc) in crc_db:
+#             return False
+#       
+#         #only need to store keys, so None as value
+#         crc_db[str(crc)] = None
+#         return True
 
 
-#Peter: pull get_text out 
+#pull get_text out 
 def tokenizer(get_text: BeautifulSoup.get_text) -> list[str]:
     #text = parsed_html.get_text(strip=True)
     return word_tokenize(get_text)
@@ -243,14 +236,14 @@ def wordFreqCount(tokenized_words):
         print(f"Error finding finding the word frequency: {e}")
 
 
-#Peter: takes url, resp, bfs_depth
+#takes url, resp, bfs_depth
 def scraper(url: str, resp: Response, bfs_depth: int) -> list:
-    #Peter: takes url, resp, bfs_depth
+    #takes url, resp, bfs_depth
     # correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return extract_next_links(url, resp, bfs_depth)
 
 
-#Peter: takes url, resp, bfs_depth
+#takes url, resp, bfs_depth
 def extract_next_links(url, resp, bfs_depth):
     # Implementation required.
     # url: the URL that was used to get the page
@@ -270,7 +263,7 @@ def extract_next_links(url, resp, bfs_depth):
     print(f'URL - {url} \nresponse URL - {resp.url} \nResponse Status - {resp.status} \nResponse Error - {resp.error}\nbfs_depth - {bfs_depth}')
     list_of_urls = []
 
-    #Peter: bfs pruning happens here
+    #bfs pruning happens here
     #TODO print and perhaps move
     if bfs_depth >= MAX_BFS_DEPTH:
         return []
@@ -284,9 +277,9 @@ def extract_next_links(url, resp, bfs_depth):
         get_text = parsed_html.get_text(strip=False)
 
         # #TODO keep print nice and accurate, check that this fits the flow of the function
-        # #iff near or exact duplicate of an already seen page, return False
-        # #otherwise, crc and simhash are computed and shelved
-        # if crcSimhashDuplicateCheck(get_text):
+        # #iff exact duplicate of an already seen page, return False
+        # #otherwise, crc is computed and shelved
+        # if crcDuplicateCheck(get_text):
         #     print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
         #     return []
 
@@ -307,9 +300,9 @@ def extract_next_links(url, resp, bfs_depth):
 
             actual_link = removeFragment(actual_link) # defragment the link
             
-            #Peter: urlsDifferentEnough()
+            #urlsDifferentEnough()
             if isValidDomain(actual_link) and is_valid(actual_link):
-                #Peter: urlsDifferentEnough()
+                #urlsDifferentEnough()
                 #  putting this count here to print whether anything was filtered by urlsDifferentEnough
                 before_urlsDifferentEnough += 1
                 if urlsDifferentEnough(url, actual_link):
@@ -317,7 +310,7 @@ def extract_next_links(url, resp, bfs_depth):
 
     print(f"Filtered by urlsDifferentEnough - {before_urlsDifferentEnough - len(list_of_urls)}")
     print(f"Links extracted - {len(list_of_urls)}")
-    #Peter: correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
+    #correct and intentional to have a list of only url's without bfs_depth here; that is handled in worker.py
     return list_of_urls
         
 def is_valid(url):
@@ -328,17 +321,7 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
             return False
-        return not re.match(
-            r".*\.(css|js|bmp|gif|jpe?g|ico"
-            + r"|png|tiff?|mid|mp2|mp3|mp4"
-            + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
-            + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1|ppsx|pps|mat"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|py|sql|c|cpp|out|test|mod|tag|info|Z|lisp|cc"
-            + r"|col|r|apk|img|war|java|bam"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+        return not re.match(BAD_EXTENSIONS, parsed.path.lower()) and not re.match(BAD_EXTENSIONS, parsed.query.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
