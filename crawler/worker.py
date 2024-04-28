@@ -37,13 +37,19 @@ class Worker(Thread):
         Accesses robots.txt and the webpage contents within a given timeout period.
         Returns False if we are prohibited to access the webpage, otherwise returns its contents.
         '''
+        if (wait_time := self.config.time_delay - (time.time() - DOMAIN_LAST_ACCESSED[domain])) >= 0.0:
+            time.sleep(wait_time)
+
         #Michael: check if robots.txt file says it's okay to crawl before downloading
         if not scraper.checkRobotsTxt(tbd_url):
             print("This URL cannot be crawled due to robots.txt")
             return False
         
+        time.sleep(self.config.time_delay) #robots check, and then download
+        
         # download file contents
         resp = download(tbd_url, self.config, self.logger)
+        #TODO TODO TODO in try except catching timeout-decorator, finally: set DOMAIN_LAST_ACCESSED[domain] = time.time()
         DOMAIN_LAST_ACCESSED[domain] = time.time()  # update when the domain last accessed
         return resp
 
@@ -55,12 +61,10 @@ class Worker(Thread):
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break
-            
             print(f"{'DEBUG':=^100}")
-            #map domain to time last accessed for hopefully faster crawling
+
+            #map domain to time last accessed for faster crawling
             domain = urlparse(tbd_url).netloc
-            if (wait_time := self.config.time_delay - (time.time() - DOMAIN_LAST_ACCESSED[domain])) >= 0.0:
-                time.sleep(wait_time)
 
             # we time accessing robots.txt and downloading each webpage
             # (ThreadPoolExecutor base code from AI Tutor)
