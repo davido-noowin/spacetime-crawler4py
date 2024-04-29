@@ -70,4 +70,3 @@ def download(url, config, logger=None):
         "error": f"Spacetime Response error {resp} with url {url}.",
         "status": resp.status_code,
         "url": url})
-

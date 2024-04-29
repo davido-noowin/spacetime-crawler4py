@@ -69,7 +69,7 @@ class Worker:
             # we time accessing robots.txt and downloading each webpage
             try:
                 # Attempt to access robots.txt and download each webpage
-                self.timeddownload(tbd_url, domain)
+                resp = self.timeddownload(tbd_url, domain)
 
             except timeout_decorator.TimeoutError:
                 # if download times out
