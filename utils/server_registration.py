@@ -28,7 +28,7 @@ def init(df, user_agent, fresh):
     return reg.load_balancer
 
 
-@timeout_decorator.timeout(MAX_SERVER_TIMEOUT, timeout_exception=StopIteration) # if a server exceeds the timeout period, error is raised
+@timeout_decorator.timeout(MAX_SERVER_TIMEOUT) # if a server exceeds the timeout period, timeout_decorator.TimeoutError is raised
 def get_cache_server(config, restart):
     init_node = Node(
         init, Types=[Register], dataframe=(config.host, config.port))

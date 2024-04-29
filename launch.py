@@ -1,11 +1,19 @@
 from configparser import ConfigParser
 from argparse import ArgumentParser
 
-from utils.server_registration import get_cache_server
+from utils.server_registration import get_cache_server, MAX_SERVER_TIMEOUT
 from utils.config import Config
 from crawler import Crawler
 
 from time import sleep
+
+import timeout_decorator
+#   # TODO ANGELA: ARE THESE NUMBERS GOOD?
+#   # stop program if server takes too long to connect
+#   from concurrent.futures import ThreadPoolExecutor, TimeoutError
+#   MAX_SERVER_TIMEOUT = 20 # timeout period for the server  #import from server_registration
+#   # AI Tutor suggested to use concurrent.futures
+
 
 def main(config_file, restart):
     cparser = ConfigParser()
@@ -16,24 +24,33 @@ def main(config_file, restart):
     retries_left = 5            # arbitrary 5 tries
     polite_sleep_period = 20    # each retry after sleeping for 20 sec
     while retries_left > 0:
+
+#        # (ThreadPoolExecutor base code from AI Tutor)
+#        with ThreadPoolExecutor(max_workers=1) as executor:
+#            # Submit the function to the executor
+#            future = executor.submit(get_cache_server, config, restart)
+
+        # attempt to connect to server with timeout
         try:
+#           config.cache_server = future.result(timeout=MAX_SERVER_TIMEOUT)
             config.cache_server = get_cache_server(config, restart)
             crawler = Crawler(config, restart)
             crawler.start()
-    
-        # if server takes too long to connect, retry
-        except StopIteration:
-            retries_left -= 1
-            print("Server timed out error")
-            print(f"Retrying in 30 seconds. After this, {retries_left} retries remaining.")
-            sleep(polite_sleep_period)
 
+            # if server takes too long to connect, retry
+        except timeout_decorator.TimeoutError:
+        #except TimeoutError:
+            retries_left -= 1
+            print(f"TIMEOUT ERROR: server timed out with over {MAX_SERVER_TIMEOUT} seconds")
+            print(f"Retrying in {polite_sleep_period} seconds. After this, {retries_left} retries remaining.")
+            sleep(polite_sleep_period)
+    
         # if server encounters a connection error, retry
         except Exception as e:
             retries_left -= 1
             print("Uncaught error occurred:")
             print(e)
-            print(f"Retrying in 30 seconds. After this, {retries_left} retries remaining.")
+            print(f"Retrying in {polite_sleep_period} seconds. After this, {retries_left} retries remaining.")
             sleep(polite_sleep_period)
 
         # if server connection is successful, exit loop
@@ -46,4 +63,6 @@ if __name__ == "__main__":
     parser.add_argument("--restart", action="store_true", default=False)
     parser.add_argument("--config_file", type=str, default="config.ini")
     args = parser.parse_args()
+    print(f"{'LAUNCH.MAIN() ENTER':=^100}") #debug
     main(args.config_file, args.restart)
+    print(f"{'LAUNCH.MAIN() EXIT':=^100}")  #debug
