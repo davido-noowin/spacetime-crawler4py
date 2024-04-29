@@ -1,4 +1,4 @@
-from threading import Thread
+#Workerless: from threading import Thread
 
 from inspect import getsource
 from utils.download import download
@@ -21,7 +21,8 @@ MAX_WEBPAGE_TIMEOUT = 30            # timeout period for each webpage
 # AI Tutor suggested to use the timeout_decorator package (information on timeout_decorator was found through this link: https://pypi.org/project/timeout-decorator/)
 
 
-class Worker(Thread):
+#Workerless: class Worker(Thread):
+class Worker:
     def __init__(self, worker_id, config, frontier):
         self.logger = get_logger(f"Worker-{worker_id}", "Worker")
         self.config = config
@@ -29,7 +30,7 @@ class Worker(Thread):
         # basic check for requests in scraper
         assert {getsource(scraper).find(req) for req in {"from requests import", "import requests"}} == {-1}, "Do not use requests in scraper.py"
         assert {getsource(scraper).find(req) for req in {"from urllib.request import", "import urllib.request"}} == {-1}, "Do not use urllib.request in scraper.py"
-        super().__init__(daemon=True)
+        #Workerless: super().__init__(daemon=True)
 
 
     @timeout_decorator.timeout(MAX_WEBPAGE_TIMEOUT)
@@ -50,7 +51,7 @@ class Worker(Thread):
         
         # download file contents
         resp = download(tbd_url, self.config, self.logger)
-        #DOMAIN_LAST_ACCESSED[domain] = time.time() is done in outside finally:
+        #DOMAIN_LAST_ACCESSED is updated in outside finally:
         return resp
 
 
