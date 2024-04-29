@@ -41,6 +41,8 @@ def download(url, config, logger=None):
         # if content is too large and exceeds a max size of 1MB, raise error
         if not checkLinkSize(url, host, port, config):
             raise Exception('File is too big')
+        
+        time.sleep(config.time_delay) #between HEAD and GET
 
         resp = requests.get(
             f"http://{host}:{port}/",
