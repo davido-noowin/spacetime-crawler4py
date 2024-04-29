@@ -59,7 +59,7 @@ def queryStrikesOkay(url: str) -> bool:
     That is, too many urls like base?blah=blah.
     '''
     if (upto := url.rfind('?')) != -1:
-        with shelve.open("query_strikes.db") as db:
+        with shelve.open("query_strikes.db", writeback=True) as db:
             base = url[:upto]
             if base not in db:
                 db[base] = 1
@@ -168,19 +168,16 @@ def updateUniqueUrl(url: str) -> None:
         print(f"Error saving unique_urls set: {e}")
 
 
-# def crcDuplicateCheck(get_text: BeautifulSoup.get_text) -> bool:
-#     '''
-#     docstring goes here TODO
-#     '''
-#     with shelve.open("crc.db", writeback=True) as crc_db:
-#         #crc chunk
-#         crc = binascii.crc32(get_text.encode(encoding="utf-8"))
-#         if str(crc) in crc_db:
-#             return False
-#       
-#         #only need to store keys, so None as value
-#         crc_db[str(crc)] = None
-#         return True
+def crcOkay(get_text: BeautifulSoup.get_text) -> bool:
+    with shelve.open("crc.db", writeback=True) as db:
+        crc = str(binascii.crc32(get_text.encode(encoding="utf-8")))
+        if crc in db:
+            print("CRC found exact duplicate. Will not crawl.")
+            return False
+      
+        #only need to store keys, so None as value
+        db[crc] = None
+        return True
 
 
 #pull get_text out 
@@ -291,37 +288,32 @@ def extract_next_links(url, resp, bfs_depth):
     if resp.status == 200 and bfsDepthOkay(bfs_depth) and queryStrikesOkay(resp.url):
         print("ACCESSING VALID URL STATUS 200")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
-
         get_text = parsed_html.get_text(strip=False)
 
-        # #iff exact duplicate of an already seen page, return False
-        # #otherwise, crc is computed and shelved
-        # if crcDuplicateCheck(get_text):
-        #     print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
-        #     return []
-
-        text = tokenizer(get_text)
-        subDomainCount(resp.url)
-        wordFreqCount(text)
-        updateUniqueUrl(resp.url) # adding to the counting set
-        updateWordCount(text, resp.url)
-        
-        for link in parsed_html.find_all('a', href=True):
-            possible_link = link['href']
-            actual_link = ''
-            if not checkPath(possible_link):
-                # if the path is not a valid absolute path then we manipulate it so that it becomes one
-                actual_link = convertRelativeToAbsolute(url, possible_link)
-            else:
-                actual_link = possible_link
-
-            actual_link = removeFragment(actual_link) # defragment the link
+        #check for exact duplicates, printing on fail
+        if crcOkay(get_text):
+            text = tokenizer(get_text)
+            subDomainCount(resp.url)
+            wordFreqCount(text)
+            updateUniqueUrl(resp.url) # adding to the counting set
+            updateWordCount(text, resp.url)
             
-            if isValidDomain(actual_link) and is_valid(actual_link):
-                #for printing whether anything was filtered by urlsDifferentEnough
-                before_urlNonrecurrenceOkay += 1
-                if urlNonrecurrenceOkay(url):
-                    list_of_urls.append(actual_link)
+            for link in parsed_html.find_all('a', href=True):
+                possible_link = link['href']
+                actual_link = ''
+                if not checkPath(possible_link):
+                    # if the path is not a valid absolute path then we manipulate it so that it becomes one
+                    actual_link = convertRelativeToAbsolute(url, possible_link)
+                else:
+                    actual_link = possible_link
+
+                actual_link = removeFragment(actual_link) # defragment the link
+                
+                if isValidDomain(actual_link) and is_valid(actual_link):
+                    #for printing whether anything was filtered by urlsDifferentEnough
+                    before_urlNonrecurrenceOkay += 1
+                    if urlNonrecurrenceOkay(url):
+                        list_of_urls.append(actual_link)
 
     print(f"Filtered by urlNonrecurrenceOkay - {before_urlNonrecurrenceOkay - len(list_of_urls)}")
     print(f"Links extracted - {len(list_of_urls)}")
