@@ -50,9 +50,8 @@ class Worker:
         time.sleep(self.config.time_delay) #robots check, and then download
         
         # download file contents
-        resp = download(tbd_url, self.config, self.logger)
+        return download(tbd_url, self.config, self.logger)
         #DOMAIN_LAST_ACCESSED is updated in outside finally:
-        return resp
 
 
     def run(self):
