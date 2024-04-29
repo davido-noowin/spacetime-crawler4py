@@ -9,7 +9,6 @@ from time import sleep
 
 # stop program if server takes too long to connect
 import timeout_decorator
-# TODO ANGELA: ARE THESE NUMBERS GOOD?
 
 
 def main(config_file, restart):
