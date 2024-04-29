@@ -70,7 +70,7 @@ class Worker(Thread):
                 # Attempt to access robots.txt and download each webpage
                 self.timeddownload(tbd_url, domain)
 
-            except TimeoutError:
+            except timeout_decorator.TimeoutError:
                 # if download times out
                 print(f"TIMEOUT ERROR: Downloading {tbd_url} did not complete within {MAX_WEBPAGE_TIMEOUT} seconds")
                 resp = False
