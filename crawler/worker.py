@@ -78,6 +78,7 @@ class Worker(Thread):
             finally:
                 DOMAIN_LAST_ACCESSED[domain] = time.time()
                 # if we cannot download, we skip this iteration
+                # failed downloads (due to timeout error, too many redirects, other exceptions) do not get scraped
                 if resp is False:
                     print(f"Failed to download {tbd_url}.")
                     #url, bfs_depth
