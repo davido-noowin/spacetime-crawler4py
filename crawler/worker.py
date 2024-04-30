@@ -5,7 +5,6 @@ from utils.download import download
 from utils import get_logger
 import scraper
 import time
-import urllib.robotparser
 
 
 #map domain to time last accessed for hopefully faster crawling
