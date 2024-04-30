@@ -16,7 +16,7 @@ DOMAIN_LAST_ACCESSED = defaultdict(float)
 # TODO ANGELA: ARE THESE NUMBERS GOOD?
 # stop crawling if webpage takes too long to respond, download, scrape
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
-MAX_WEBPAGE_TIMEOUT = 30 # timeout period for each webpage
+MAX_WEBPAGE_TIMEOUT = 10 # timeout period for each webpage
 # AI Tutor suggested to use concurrent.futures
 
 
