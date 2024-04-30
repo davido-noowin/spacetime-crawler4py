@@ -6,7 +6,7 @@ from utils.response import Response
 
 # TODO ANGELA: ARE THESE NUMBERS GOOD?
 MAX_REDIRECT = 10
-MAX_TIMEOUT_SECONDS = 20
+MAX_TIMEOUT_SECONDS = 10
 MAX_BYTE_SIZE = 1000000
 
 # determines whether or not to open a link based on its size
