@@ -40,12 +40,15 @@ num_words = 0
 longest_url = ""
 
 
-def bfsDepthOkay(bfs_depth) -> bool:
-    #correct, since at MAX_BFS_DEPTH means that many before this 
+def bfsDepthOkay(bfs_depth: int) -> bool:
+    '''
+    Checks to see if the bfs depth of the link exceeds the MAX_BFS_DEPTH that has been set.
+    '''
     if bfs_depth >= MAX_BFS_DEPTH:
         print("BFS depth limit exceeded. Will not crawl.")
         return False
     return True
+
 
 def queryStrikesOkay(url: str) -> bool:
     '''
@@ -65,6 +68,7 @@ def queryStrikesOkay(url: str) -> bool:
                     print("Query strike limit exceeded. Will not crawl.")
                     return False
     return True
+
 
 def urlNonrecurrenceOkay(url: str) -> bool:
     '''
@@ -320,7 +324,7 @@ def extract_next_links(url, resp, bfs_depth):
     print(f"Links extracted - {len(list_of_urls)}")
     return list_of_urls #correct and intentional to have a list of only url's without bfs_depth's here
         
-        
+
 def is_valid(url):
     # File extension checks for whether to crawl this url
     #  both for path and for query
