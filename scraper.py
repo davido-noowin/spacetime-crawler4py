@@ -22,8 +22,6 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.stat.uci.edu/*']
 
 MAX_BFS_DEPTH = 35
-#TODO have to tune
-MAX_QUERY_STRIKES = 10
 URL_NONRECURRENCE_MINIMUM = 0.6
 
 BAD_EXTENSIONS = \
@@ -48,26 +46,6 @@ def bfsDepthOkay(bfs_depth: int) -> bool:
     if bfs_depth >= MAX_BFS_DEPTH:
         print("BFS depth limit exceeded. Will not crawl.")
         return False
-    return True
-
-
-def queryStrikesOkay(url: str) -> bool:
-    '''
-    Increments query strikes for base queryless url.
-    Returns whether the base queryless url has had too many strikes.
-    That is, too many urls like base?blah=blah.
-    '''
-    if (upto := url.rfind('?')) != -1:
-        with shelve.open("query_strikes.db", writeback=True) as db:
-            base = url[:upto]
-            if base not in db:
-                db[base] = 1
-            else:
-                db[base] += 1
-                #correct, since at MAX_QUERY_STRIKES means this is the MAX_QUERY_STRIKES'th
-                if db[base] > MAX_QUERY_STRIKES:
-                    print("Query strike limit exceeded. Will not crawl.")
-                    return False
     return True
 
 
@@ -281,7 +259,7 @@ def extract_next_links(url, resp, bfs_depth):
 
     before_urlNonrecurrenceOkay = 0 #for printing
     #conditions for crawling. bfsDepthOkay and queryStrikesOkay print on fail
-    if resp.status == 200 and bfsDepthOkay(bfs_depth) and queryStrikesOkay(resp.url):
+    if resp.status == 200 and bfsDepthOkay(bfs_depth):
         print("ACCESSING VALID URL STATUS 200")
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
         get_text = parsed_html.get_text(strip=False)
