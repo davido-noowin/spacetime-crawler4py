@@ -326,8 +326,10 @@ def extract_next_links(url, resp, bfs_depth):
         
 
 def is_valid(url):
-    # File extension checks for whether to crawl this url
-    #  both for path and for query
+    '''
+    File extension checks for whether to crawl this url both for path and for query
+    '''
+    
     try:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
