@@ -288,7 +288,7 @@ def extract_next_links(url, resp, bfs_depth):
 
         #check for exact duplicates, printing on fail
         if crcOkay(get_text):
-            text = tokenizer(get_text, strip=True)
+            text = tokenizer(parsed_html, strip=True)
             subDomainCount(resp.url)
             wordFreqCount(text)
             updateUniqueUrl(resp.url) # adding to the counting set
