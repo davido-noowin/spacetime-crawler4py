@@ -1,7 +1,6 @@
 import re
 import shelve
 import fnmatch
-import binascii
 import nltk
 from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
@@ -12,6 +11,9 @@ from collections import Counter
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 nltk.download('punkt')
+
+#profiling
+import binascii
 
 
 DOMAINS = ['*.ics.uci.edu/*', 
@@ -186,6 +188,7 @@ def updateWordCount(tokenized_words: str, url:str) -> None:
     '''
     global num_words
     global longest_url
+
     try:
         with shelve.open('max_num_words.db', writeback=True) as db:
             if 'num_words' not in db:
@@ -196,8 +199,8 @@ def updateWordCount(tokenized_words: str, url:str) -> None:
             word_count = len(tokenized_words)
 
             if word_count > num_words:
-                num_words = word_count
                 longest_url = url
+                num_words = word_count
                 db['num_words'] = word_count
                 db['longest_url'] = url
     except Exception as e:
@@ -289,7 +292,7 @@ def extract_next_links(url, resp, bfs_depth):
 
         #check for exact duplicates, printing on fail
         if crcOkay(get_text):
-            text = tokenizer(get_text)
+            text = tokenizer(get_text, strip=True)
             subDomainCount(resp.url)
             wordFreqCount(text)
             updateUniqueUrl(resp.url) # adding to the counting set
@@ -321,7 +324,6 @@ def is_valid(url):
     '''
     File extension checks for whether to crawl this url both for path and for query
     '''
-    
     try:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
