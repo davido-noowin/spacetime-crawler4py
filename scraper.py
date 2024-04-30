@@ -39,7 +39,6 @@ BAD_EXTENSIONS = \
     r"|rm|smil|wmv|swf|wma|zip|rar|gz)$"      
 
 num_words = 0
-longest_url = ""
 
 
 def bfsDepthOkay(bfs_depth: int) -> bool:
@@ -187,8 +186,6 @@ def updateWordCount(tokenized_words: str, url:str) -> None:
     checks to see if it is the longest page
     '''
     global num_words
-    global longest_url
-
     try:
         with shelve.open('max_num_words.db', writeback=True) as db:
             if 'num_words' not in db:
@@ -199,7 +196,6 @@ def updateWordCount(tokenized_words: str, url:str) -> None:
             word_count = len(tokenized_words)
 
             if word_count > num_words:
-                longest_url = url
                 num_words = word_count
                 db['num_words'] = word_count
                 db['longest_url'] = url
