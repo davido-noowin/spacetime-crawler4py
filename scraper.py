@@ -1,7 +1,6 @@
 import re
 import shelve
 import fnmatch
-import pickle
 from utils.response import Response # located in the utils folder
 from urllib.parse import urlparse, urlunparse, urljoin
 from bs4 import BeautifulSoup
@@ -12,10 +11,6 @@ import nltk
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 nltk.download('punkt')
-
-#profiling
-import time
-import binascii
 
 
 DOMAINS = ['*.ics.uci.edu/*', 
@@ -144,11 +139,11 @@ def removeFragment(url: str) -> str:
     return clean_url
 
 
-def tokenizer(parsed_html: BeautifulSoup) -> str:
+def tokenizer(parsed_html: BeautifulSoup, strip: bool) -> list[str]:
     '''
     Tokenizes the html page so that it can be used in other functions
     '''
-    text = parsed_html.get_text(strip=True)
+    text = parsed_html.get_text(strip=strip)
     return word_tokenize(text)
 
 
@@ -183,16 +178,13 @@ def updateUniqueUrl(url: str) -> None:
 #         return True
 
 
-#pull get_text out 
-def tokenizer(get_text: BeautifulSoup.get_text) -> list[str]:
-    #text = parsed_html.get_text(strip=True)
-    return word_tokenize(get_text)
-
 def updateWordCount(tokenized_words: str, url:str) -> None:
     '''
     Checks the text of the parsed html, preprocesses it to remove any whitespace then
     checks to see if it is the longest page
     '''
+    global num_words
+    global longest_url
     try:
         with shelve.open('max_num_words.db', writeback=True) as db:
             if 'num_words' not in db:
@@ -203,6 +195,8 @@ def updateWordCount(tokenized_words: str, url:str) -> None:
             word_count = len(tokenized_words)
 
             if word_count > num_words:
+                num_words = word_count
+                longest_url = url
                 db['num_words'] = word_count
                 db['longest_url'] = url
     except Exception as e:
@@ -268,20 +262,19 @@ def scraper(url: str, resp: Response, bfs_depth: int) -> list:
 
 #takes url, resp, bfs_depth
 def extract_next_links(url, resp, bfs_depth):
-    # Implementation required.
-    # url: the URL that was used to get the page
-    # resp.url: the actual url of the page
-    # resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
-    # resp.error: when status is not 200, you can check the error here, if needed.
-    # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
-    #         resp.raw_response.url: the url, again
-    #         resp.raw_response.content: the content of the page!
-    # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    
     '''
     Uses the Response content and analyzes the html for possible links to add to the
     frontier. It attempts to filter out pages that have low information value, is not
     within the specified domains, or is not a valid web page
+
+    url: the URL that was used to get the page
+    resp.url: the actual url of the page
+    resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
+    resp.error: when status is not 200, you can check the error here, if needed.
+    resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
+            resp.raw_response.url: the url, again
+            resp.raw_response.content: the content of the page!
+    Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     '''
     print(f'URL - {url} \nresponse URL - {resp.url} \nResponse Status - {resp.status} \nResponse Error - {resp.error}\nbfs_depth - {bfs_depth}')
     list_of_urls = []
@@ -300,7 +293,7 @@ def extract_next_links(url, resp, bfs_depth):
         #     print("THIS URL WILL NOT BE CRAWLED DUE TO LOW INFORMATION VALUE.")
         #     return []
 
-        text = tokenizer(get_text)
+        text = tokenizer(get_text, strip=True)
         subDomainCount(resp.url)
         wordFreqCount(text)
         updateUniqueUrl(resp.url) # adding to the counting set
@@ -326,6 +319,7 @@ def extract_next_links(url, resp, bfs_depth):
     print(f"Filtered by urlNonrecurrenceOkay - {before_urlNonrecurrenceOkay - len(list_of_urls)}")
     print(f"Links extracted - {len(list_of_urls)}")
     return list_of_urls #correct and intentional to have a list of only url's without bfs_depth's here
+        
         
 def is_valid(url):
     # File extension checks for whether to crawl this url
