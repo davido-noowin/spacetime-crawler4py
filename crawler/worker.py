@@ -6,6 +6,9 @@ from utils import get_logger
 import scraper
 import time
 
+#HARDCODE filters
+import re
+
 
 #map domain to time last accessed for hopefully faster crawling
 from urllib.parse import urlparse
@@ -62,6 +65,11 @@ class Worker:
                 return
             print(f"{'DEBUG':=^100}")
 
+            if re.match(r"https://archive.ics.uci.edu/ml/datasets.php\?format=.*&task=.*&att=.*&area=.*&numAtt=.*&numIns=.*&type=.*&sort=.*&view=.*$", tbd_url):
+                self.logger.info(f"HARDCODE {tbd_url}")
+                print(f"HARDCODE {tbd_url}")
+                continue
+
             #map domain to time last accessed for faster crawling
             domain = urlparse(tbd_url).netloc
             # we time accessing robots.txt and downloading each webpage
@@ -84,7 +92,7 @@ class Worker:
                     self.frontier.mark_url_complete(tbd_url, bfs_depth)    # mark complete even if url timed out
                     continue
                 else:
-                    self.logger.info( f"Downloaded {tbd_url}, status <{resp.status}>, " f"using cache {self.config.cache_server}.")
+                    self.logger.info( f"{bfs_depth:<2}) Downloaded {tbd_url}, status <{resp.status}>, " f"using cache {self.config.cache_server}.")
                     scraped_urls = scraper.scraper(tbd_url, resp, bfs_depth)
                     for scraped_url in scraped_urls:
                         self.frontier.add_url(scraped_url, bfs_depth + 1)
