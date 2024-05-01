@@ -286,7 +286,7 @@ def extract_next_links(url, resp, bfs_depth):
                 if isValidDomain(actual_link) and is_valid(actual_link):
                     #for printing whether anything was filtered by urlsDifferentEnough
                     before_urlNonrecurrenceOkay += 1
-                    if urlNonrecurrenceOkay(url):
+                    if urlNonrecurrenceOkay(actual_link):
                         list_of_urls.append(actual_link)
 
     print(f"Filtered by urlNonrecurrenceOkay - {before_urlNonrecurrenceOkay - len(list_of_urls)}")
