@@ -50,6 +50,9 @@ def download(url, config, logger=None):
             allow_redirects=True,               # allows for redirects
             timeout=MAX_TIMEOUT_SECONDS)        # caps each download at a 20 second timeout
         
+        logger.info(f"Pages {[(f'{r.url} (code:{r.status_code}), ') for r in resp.history]} redirected us to {f'{resp.url} (code:{resp.status_code})'}")
+
+        
     except requests.TooManyRedirects:   # if a link exceeds the maximum number of redirects
         print("REDIRECT ERROR: Too Many Redirects")
         return False
