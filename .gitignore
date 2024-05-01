@@ -1,3 +1,10 @@
+# Deliverable Files
+crc.db
+max_num_words.db
+subdomain_counts.db
+unique_urls.db
+word_frequencies.db
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
