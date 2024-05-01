@@ -65,7 +65,8 @@ class Worker:
                 return
             print(f"{'DEBUG':=^100}")
 
-            if re.match(r"https://archive.ics.uci.edu/ml/datasets.php\?format=.*&task=.*&att=.*&area=.*&numAtt=.*&numIns=.*&type=.*&sort=.*&view=.*$", tbd_url):
+            if re.match(r"https://archive.ics.uci.edu/ml/datasets.php\?format=.*&task=.*&att=.*&area=.*&numAtt=.*&numIns=.*&type=.*&sort=.*&view=.*$", tbd_url) or \
+                re.match(r"https://grape.ics.uci.edu/wiki/(asterix|public)/timeline\?from=.*&precision=.*$", tbd_url):
                 self.logger.info(f"HARDCODE {tbd_url}")
                 print(f"HARDCODE {tbd_url}")
                 continue
