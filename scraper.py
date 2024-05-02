@@ -22,7 +22,7 @@ DOMAINS = ['*.ics.uci.edu/*',
           '*.stat.uci.edu/*']
 
 MAX_BFS_DEPTH = 35
-URL_NONRECURRENCE_MINIMUM = 0.6
+URL_NONRECURRENCE_MINIMUM = 0.7
 
 BAD_EXTENSIONS = \
     r".*\.(css|js|bmp|gif|jpe?g|ico" + \
