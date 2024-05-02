@@ -116,6 +116,9 @@ def removeFragment(url: str) -> str:
     '''
     Removes the fragment from a url
     '''
+    if url[0] == '#':
+        return ''
+
     parsed_url = urlparse(url)
     # Remove fragment from the URL
     clean_url = urlunparse(parsed_url._replace(fragment=''))
@@ -276,12 +279,11 @@ def extract_next_links(url, resp, bfs_depth):
                 possible_link = link['href']
                 actual_link = ''
                 if not checkPath(possible_link):
+                    possible_link = removeFragment(possible_link) # defragment the link
                     # if the path is not a valid absolute path then we manipulate it so that it becomes one
                     actual_link = convertRelativeToAbsolute(url, possible_link)
                 else:
                     actual_link = possible_link
-
-                actual_link = removeFragment(actual_link) # defragment the link
                 
                 if isValidDomain(actual_link) and is_valid(actual_link):
                     #for printing whether anything was filtered by urlsDifferentEnough
