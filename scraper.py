@@ -116,6 +116,9 @@ def removeFragment(url: str) -> str:
     '''
     Removes the fragment from a url
     '''
+    if len(url) == 0:
+        return ''
+
     if url[0] == '#':
         return ''
 
