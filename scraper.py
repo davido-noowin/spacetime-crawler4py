@@ -71,7 +71,7 @@ def convertRelativeToAbsolute(url: str, possibleUrl: str) -> str:
     '''
     Converts a relative path to an absolute path so that we can crawl it
     '''
-    return urljoin(url, possibleUrl)
+    return urljoin(url, possibleUrl, allow_fragments=False)
 
 
 def checkRobotsTxt(url: str) -> bool:
@@ -238,6 +238,9 @@ def wordFreqCount(tokenized_words):
 
 #takes url, resp, bfs_depth
 def scraper(url: str, resp: Response, bfs_depth: int) -> list:
+    '''
+    Executes the scraper and returns a list of links to scrape
+    '''
     return extract_next_links(url, resp, bfs_depth)
 
 
@@ -278,8 +281,8 @@ def extract_next_links(url, resp, bfs_depth):
             for link in parsed_html.find_all('a', href=True):
                 possible_link = link['href']
                 actual_link = ''
+                possible_link = removeFragment(possible_link) # defragment the link
                 if not checkPath(possible_link):
-                    possible_link = removeFragment(possible_link) # defragment the link
                     # if the path is not a valid absolute path then we manipulate it so that it becomes one
                     actual_link = convertRelativeToAbsolute(url, possible_link)
                 else:
