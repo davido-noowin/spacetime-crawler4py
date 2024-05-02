@@ -17,7 +17,7 @@ def main(config_file, restart):
     config = Config(cparser)
 
     # TODO ANGELA: ARE THESE NUMBERS GOOD?
-    retries_left = 5            # arbitrary 5 tries
+    retries_left = 1000            # arbitrary 5 tries
     polite_sleep_period = 20    # each retry after sleeping for 20 sec
     while retries_left > 0:
         try:
