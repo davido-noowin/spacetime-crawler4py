@@ -175,7 +175,7 @@ def simhashOkay(url: str, get_text: BeautifulSoup.get_text) -> bool:
                 simhashes = db[bucket]
                 #reversed because more likely to match with more recent url's
                 if any(the_simhash.distance(other) <= 2 for other in reversed(simhashes)):
-                    print("Simhash found exact duplicate. Will not crawl.")
+                    print("Simhash found near duplicate. Will not crawl.")
                     return False
                 simhashes.append(the_simhash)
                 db[bucket] = simhashes
