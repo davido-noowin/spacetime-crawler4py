@@ -12,9 +12,8 @@ from nltk.corpus import stopwords
 nltk.download('stopwords')
 nltk.download('punkt')
 
-#profiling
 import binascii
-
+from simhash import Simhash #pip instal simhash
 
 DOMAINS = ['*.ics.uci.edu/*', 
           '*.cs.uci.edu/*', 
@@ -162,6 +161,27 @@ def crcOkay(get_text: BeautifulSoup.get_text) -> bool:
         #only need to store keys, so None as value
         db[crc] = None
         return True
+    
+
+def simhashOkay(url: str, get_text: BeautifulSoup.get_text) -> bool:
+    components = url[url.find("://") + 3:].split('/')
+    components = [c for c in components if c]
+    #if there is no component after the domain, dont check
+    if len(components) > 1:
+        with shelve.open("simhash.db", writeback=True) as db:
+            bucket = f"{components[0]}/{components[1]}"
+            the_simhash = Simhash(get_text)
+            if bucket in db:
+                simhashes = db[bucket]
+                #reversed because more likely to match with more recent url's
+                if any(the_simhash.distance(other) <= 2 for other in reversed(simhashes)):
+                    print("Simhash found exact duplicate. Will not crawl.")
+                    return False
+                simhashes.append(the_simhash)
+                db[bucket] = simhashes
+            else:
+                db[bucket] = [the_simhash]
+    return True
 
 
 def updateWordCount(tokenized_words: str, url:str) -> None:
@@ -273,8 +293,8 @@ def extract_next_links(url, resp, bfs_depth):
         parsed_html = BeautifulSoup(resp.raw_response.content, "html.parser")
         get_text = parsed_html.get_text(strip=False)
 
-        #check for exact duplicates, printing on fail
-        if crcOkay(get_text):
+        #check for exact and near duplicatess, printing on fail
+        if crcOkay(get_text) and simhashOkay(resp.url, get_text):
             text = tokenizer(parsed_html, strip=True)
             subDomainCount(resp.url)
             wordFreqCount(text)
