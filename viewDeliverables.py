@@ -16,15 +16,10 @@ def listMostWords():
     '''
     with shelve.open('max_num_words.db', 'r') as shelf:
         with open('Assignment2Report.txt', 'w') as txt:
-            max_value = 0
-            max_key = ''
             for key in shelf:
                 value = shelf[key]
-                if value > max_value:
-                    max_value = value
-
-            txt.write(f'2. The longest page in terms of words is {max_key}, with {max_value} words.')
-            txt.write('\n')
+                txt.write(f'2. The longest page in terms of words is {key}, with {value} words.')
+                txt.write('\n')
 
 
 def listSubdomainCounts():
@@ -38,7 +33,7 @@ def listSubdomainCounts():
             for key in sorted_subdomains:
                 txt.write(f'{key}, {shelf[key]}')
                 txt.write('\n')
-                
+
 
 def listWordFrequencies():
     '''
