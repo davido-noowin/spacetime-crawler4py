@@ -105,3 +105,4 @@ class Worker:
                         self.frontier.add_url(scraped_url, bfs_depth + 1)
                         
                     self.frontier.mark_url_complete(tbd_url, bfs_depth)
+                    self.frontier.size -= 1
