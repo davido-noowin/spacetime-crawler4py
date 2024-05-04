@@ -15,6 +15,8 @@ class Frontier(object):
         self.logger = get_logger("FRONTIER")
         self.config = config
         self.to_be_downloaded = Queue()
+
+        self.size = 0
         
         if not os.path.exists(self.config.save_file) and not restart:
             # Save file does not exist, but request to load save.
@@ -65,6 +67,9 @@ class Frontier(object):
                 #appending pair (url, bfs_depth)
                 self.to_be_downloaded.put((url, bfs_depth))
                 tbd_count += 1
+
+        self.size = tbd_count
+
         self.logger.info(
             f"Found {tbd_count} urls to be downloaded from {total_count} "
             f"total urls discovered.")
@@ -87,6 +92,8 @@ class Frontier(object):
             self.save.sync()
             #appends pair(url, bfs_depth)
             self.to_be_downloaded.put((url, bfs_depth))
+
+            self.size += 1
     
     #now takes url, bfs_depth instead of url
     def mark_url_complete(self, url, bfs_depth):
