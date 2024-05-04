@@ -66,6 +66,7 @@ class Worker:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 return
             print(f"{'DEBUG':=^100}")
+            self.frontier.size -= 1
             print(f"Frontier Size - {self.frontier.size}")
 
             if re.match(r"https://archive.ics.uci.edu/ml/datasets.php\?format=.*&task=.*&att=.*&area=.*&numAtt=.*&numIns=.*&type=.*&sort=.*&view=.*$", tbd_url) or \
@@ -105,4 +106,3 @@ class Worker:
                         self.frontier.add_url(scraped_url, bfs_depth + 1)
                         
                     self.frontier.mark_url_complete(tbd_url, bfs_depth)
-                    self.frontier.size -= 1
