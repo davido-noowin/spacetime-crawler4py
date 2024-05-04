@@ -247,12 +247,14 @@ def wordFreqCount(tokenized_words):
         with shelve.open('word_frequencies.db') as wordFreq:
             for word, count in word_counter.items():
                 wordFreq[word] = wordFreq.get(word, 0) + count
-            if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
-                sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
-                top_words = sorted_word_freq[:1000]
-                wordFreq.clear()
-                for word, count in top_words:
-                    wordFreq[word] = count
+
+            # if len(wordFreq) > 10000: #KEEP ONLY TOP 1000 WORDS IF SHELVE GETS TOO FULL 
+            #     sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
+            #     top_words = sorted_word_freq[:1000]
+            #     wordFreq.clear()
+            #     for word, count in top_words:
+            #         wordFreq[word] = count
+
             #sorted_word_freq = sorted(wordFreq.items(), key=lambda x: x[1], reverse=True)
             #print(sorted_word_freq[:50])
     except Exception as e:
