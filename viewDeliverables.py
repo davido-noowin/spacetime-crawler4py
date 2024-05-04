@@ -5,8 +5,9 @@ def listUniquePages():
     Writes down the number of pages scraped
     '''
     with shelve.open('unique_urls.db', 'r') as shelf:
-        with open('unique_urls.txt', 'w') as txt:
-            txt.write(str(len(shelf['unique_urls'])))
+        with open('Assignment2Report.txt', 'w') as txt:
+            txt.write(f"1. We found {str(len(shelf['unique_urls']))} unique pages.")
+            txt.write('\n')
 
 
 def listMostWords():
@@ -14,10 +15,10 @@ def listMostWords():
     Finds the document with the largest number of words
     '''
     with shelve.open('max_num_words.db', 'r') as shelf:
-        with open('max_num_words.txt', 'w') as txt:
+        with open('Assignment2Report.txt', 'w') as txt:
             for key in shelf:
                 value = shelf[key]
-                txt.write(f'{key}, {value}')
+                txt.write(f'2. The longest page in terms of words is {key}, with {value} words.')
                 txt.write('\n')
 
 
@@ -26,12 +27,12 @@ def listSubdomainCounts():
     Lists the subdomain counts of *.ics.uci.edu
     '''
     with shelve.open('subdomain_counts.db', 'r') as shelf:
-        with open('subdomain_counts.txt', 'w') as txt:
-            for key in shelf:
-                value = shelf[key]
-                for item in value:
-                    txt.write(f'{item}, {value[item]}')
-                    txt.write('\n')
+        with open('Assignment2Report.txt', 'w') as txt:
+            sorted_subdomains = sorted(shelf)
+            txt.write(f'4. We found {len(shelf.items())} subdomains. List of subdomains:\n')
+            for key in sorted_subdomains:
+                txt.write(f'{key}, {shelf[key]}')
+                txt.write('\n')
 
 
 def listWordFrequencies():
@@ -47,7 +48,14 @@ def listWordFrequencies():
 
 
 if __name__ == "__main__":
+    with open('Assignment2Report.txt', 'w') as txt:
+        txt.write('Names: Michael Gearhart, David Nguyen, Angela Xiang, Peter Young\n')
+        txt.write('ID Numbers: 24461227,12943413,77836240,55292320\n')
+        txt.write('Assignment 2 Report\n')
+        txt.write('\n')
+
     listUniquePages()
     listMostWords()
-    listSubdomainCounts()
     listWordFrequencies()
+    listSubdomainCounts()
+    
