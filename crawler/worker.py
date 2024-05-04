@@ -64,6 +64,7 @@ class Worker:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 return
             print(f"{'DEBUG':=^100}")
+            print(f"Approx URLs left - {self.frontier.to_be_downloaded.qsize()}")
 
             if re.match(r"https://archive.ics.uci.edu/ml/datasets.php\?format=.*&task=.*&att=.*&area=.*&numAtt=.*&numIns=.*&type=.*&sort=.*&view=.*$", tbd_url) or \
                 re.match(r"https://grape.ics.uci.edu/wiki/(asterix|public).*\?.*$", tbd_url) or \
