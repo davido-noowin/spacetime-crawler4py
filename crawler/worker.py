@@ -45,11 +45,13 @@ class Worker:
             time.sleep(wait_time)
 
         #Michael: check if robots.txt file says it's okay to crawl before downloading
-        if not scraper.checkRobotsTxt(tbd_url):
+        time_last_accessed = [None] #list to allow mutable argument
+        if not scraper.checkRobotsTxt(tbd_url, time_last_accessed):
             print("This URL cannot be crawled due to robots.txt")
             return False
         
-        time.sleep(self.config.time_delay) #robots check, and then download
+        if (wait_time := self.config.time_delay - (time.time() - time_last_accessed[0])) >= 0.0:
+            time.sleep(wait_time) #robots check, and then download
         
         # download file contents
         return download(tbd_url, self.config, self.logger)

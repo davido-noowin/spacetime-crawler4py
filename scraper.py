@@ -15,6 +15,9 @@ nltk.download('punkt')
 import binascii
 from simhash import Simhash #pip instal simhash
 
+#robots faster
+import time
+
 DOMAINS = ['*.ics.uci.edu/*', 
           '*.cs.uci.edu/*', 
           '*.informatics.uci.edu/*', 
@@ -73,17 +76,20 @@ def convertRelativeToAbsolute(url: str, possibleUrl: str) -> str:
     return urljoin(url, possibleUrl, allow_fragments=False)
 
 
-def checkRobotsTxt(url: str) -> bool:
+def checkRobotsTxt(url: str, time_last_accessed: time.time) -> bool:
     '''
     Sets robot parser object to robot.txt url, then checks if it can be crawled
+    Mutates in caller's "stack" the time last accessed.
     '''
     robotUrl = getRobotsUrl(url)
     rp = urllib.robotparser.RobotFileParser()
     rp.set_url(robotUrl)
     try:
         rp.read()
+        time_last_accessed[0] = time.time()
         return rp.can_fetch("*", url)
     except Exception as e:
+        time_last_accessed[0] = time.time()
         print("Can't find robots.txt, proceed to crawl")
         return True
     
