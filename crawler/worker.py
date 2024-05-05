@@ -76,6 +76,7 @@ class Worker:
                             tbd_url.startswith("http://www.ics.uci.edu/download/download.inc.php?"):
                 self.logger.info(f"HARDCODE {tbd_url}")
                 print(f"HARDCODE {tbd_url}")
+                self.frontier.mark_url_complete(tbd_url, bfs_depth)
                 continue
 
             #map domain to time last accessed for faster crawling
