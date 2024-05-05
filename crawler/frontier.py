@@ -80,7 +80,7 @@ class Frontier(object):
             #he skeleton function also returned None upon IndexError. default block=True blocks indefinitely
             return self.to_be_downloaded.get(block=False)
         except:
-            return None
+            return None, None
 
     #now takes url, bfs_depth instead of url
     def add_url(self, url, bfs_depth):
