@@ -34,8 +34,8 @@ MAX_BYTE_SIZE = 1000000
 def download(url, config, logger=None):
     host, port = config.cache_server
     try:
-        s = requests.Session()
-        s.max_redirects = MAX_REDIRECT     # sets the max number of redirects that a link can have to 10
+        session = requests.Session()
+        session.max_redirects = MAX_REDIRECT     # sets the max number of redirects that a link can have to 10
 
         # # if content is too large and exceeds a max size of 1MB, raise error
         # if not checkLinkSize(url, host, port, config):
@@ -43,7 +43,7 @@ def download(url, config, logger=None):
         
         # time.sleep(config.time_delay) #between HEAD and GET
 
-        resp = requests.get(
+        resp = session.get(
             f"http://{host}:{port}/",
             params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
             allow_redirects=True,               # allows for redirects
