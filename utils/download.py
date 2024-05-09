@@ -4,7 +4,6 @@ import time
 
 from utils.response import Response
 
-# TODO ANGELA: ARE THESE NUMBERS GOOD?
 MAX_REDIRECT = 10
 MAX_TIMEOUT_SECONDS = 10
 MAX_BYTE_SIZE = 1000000

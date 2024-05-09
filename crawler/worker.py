@@ -16,7 +16,6 @@ from collections import defaultdict
 DOMAIN_LAST_ACCESSED = defaultdict(float)
 
 
-# TODO ANGELA: ARE THESE NUMBERS GOOD?
 # stop crawling if webpage takes too long to respond, download, scrape
 import timeout_decorator            # pip install timeout-decorator
 MAX_WEBPAGE_TIMEOUT = 10            # timeout period for each webpage

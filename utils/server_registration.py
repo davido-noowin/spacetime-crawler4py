@@ -3,7 +3,6 @@ from spacetime import Node
 from utils.pcc_models import Register
 
 
-# TODO ANGELA: ARE THESE NUMBERS GOOD?
 # stop program if server takes too long to connect
 import timeout_decorator            # pip install timeout-decorator
 MAX_SERVER_TIMEOUT = 20             # timeout period for the server
