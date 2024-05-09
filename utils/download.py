@@ -47,7 +47,7 @@ def download(url, config, logger=None):
             f"http://{host}:{port}/",
             params=[("q", f"{url}"), ("u", f"{config.user_agent}")],
             allow_redirects=True,               # allows for redirects
-            timeout=MAX_TIMEOUT_SECONDS)        # caps each download at a 20 second timeout
+            timeout=MAX_TIMEOUT_SECONDS)        # caps each download at a 10 second timeout
         
         logger.info(f"Pages {[(f'{r.url} (code:{r.status_code}), ') for r in resp.history]} redirected us to {f'{resp.url} (code:{resp.status_code})'}")
 
